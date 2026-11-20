@@ -1,14 +1,11 @@
 name: Daily GitHub ETL
+
 run-name: "ETL (${{ github.event_name }})"   # Actions list shows: schedule / workflow_dispatch
 
 on:
   schedule:
-    # --- TEST MODE: every 15 min, off-peak minutes (NOT :00/:30). Proves whether GitHub fires schedules at all.
-    - cron: "7,22,37,52 * * * *"
-    # --- FINAL MODE (swap in after you see one run with event=schedule). Keep minute odd, off :00/:30.
-    # - cron: "17 4 * * *"      # 09:47 AM IST
-    # - cron: "47 9 * * *"      # 03:17 PM IST (2nd slot = backup if first tick is dropped; pipeline is idempotent)
-  workflow_dispatch:            # manual button
+    - cron: "35 11 * * *"   # 05:05 PM IST
+  workflow_dispatch:        # manual button
 
 permissions:
   contents: write
