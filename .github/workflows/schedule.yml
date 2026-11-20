@@ -1,10 +1,9 @@
 name: Daily GitHub ETL
 
 run-name: "ETL (${{ github.event_name }})"   # Actions list shows: schedule / workflow_dispatch
-
 on:
   schedule:
-    - cron: "35 11 * * *"   # 05:05 PM IST
+    - cron: "30 19 * * *"
   workflow_dispatch:        # manual button
 
 permissions:
