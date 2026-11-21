@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GitHub ETL Engine | Trending Intelligence</title>
+<meta name="description" content="GitHub ETL Engine: automated repository discovery, transformation, historical storage and Excel intelligence.">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;0,600;1,600&display=swap');
+:root{--ivory:#E6D5BD;--cream:#F5EFE6;--red:#C8102E;--black:#0B0B0C;--muted:#75695D;--line:#D7C9B6;--soft:#EEE4D5;--ease:cubic-bezier(.2,.8,.2,1)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--cream);color:var(--black);font-family:Manrope,Arial,sans-serif;overflow-x:hidden}
+a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
+.mono{font:500 11px/1.2 'DM Mono',monospace;letter-spacing:.12em;text-transform:uppercase}.red{color:var(--red)}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.06;background-image:radial-gradient(#000 .5px,transparent .5px);background-size:5px 5px;z-index:10}
+
+/* scroll progress */
+.progress{position:fixed;top:0;left:0;height:3px;width:100%;background:var(--red);transform-origin:0 50%;transform:scaleX(0);z-index:30}
+
+/* nav */
+.nav{position:fixed;top:0;left:0;right:0;z-index:20;height:88px;padding:0 4.5vw;display:flex;align-items:center;justify-content:space-between;background:#0B0B0C;color:var(--ivory);border-bottom:1px solid rgba(230,213,189,.22);box-shadow:0 12px 35px rgba(0,0,0,.18);transition:height .4s var(--ease),transform .5s var(--ease)}
+.nav.small{height:68px}.nav.hide{transform:translateY(-100%)}
+.brand{display:flex;align-items:center;gap:17px;font-weight:800;letter-spacing:-.055em}
+.brand img{width:55px;height:55px;object-fit:contain;transition:width .4s var(--ease),height .4s var(--ease)}
+.nav.small .brand img{width:42px;height:42px}
+.brand span{font-size:19px}.brand em{font-family:'Playfair Display',serif;color:var(--red);font-size:22px;margin-right:2px}
+.navlinks{display:flex;align-items:center;gap:34px}
+.navlinks a{position:relative;font:500 10px 'DM Mono';letter-spacing:.12em;text-transform:uppercase;color:#b8aea3;transition:color .25s}
+.navlinks a:not(.nav-cta):after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:1px;background:var(--red);transform:scaleX(0);transform-origin:0 50%;transition:transform .35s var(--ease)}
+.navlinks a:not(.nav-cta):hover:after,.navlinks a.active:after{transform:scaleX(1)}
+.navlinks a:hover,.navlinks a.active{color:var(--ivory)}
+.nav-cta{padding:12px 17px;border:1px solid rgba(230,213,189,.42);color:var(--ivory)!important;transition:background .25s,border-color .25s}
+.nav-cta:hover{background:var(--red);border-color:var(--red)}
+
+/* hero */
+.hero{min-height:100vh;background:var(--black);color:var(--ivory);padding:140px 5vw 55px;display:grid;grid-template-columns:1.2fr .8fr;gap:7vw;align-items:end;position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;width:60vw;height:60vw;border-radius:50%;right:-35vw;top:-30vw;background:radial-gradient(circle,rgba(200,16,46,.24),transparent 65%);animation:pulse 7s ease-in-out infinite}
+.hero-glow{position:absolute;width:420px;height:420px;border-radius:50%;left:0;top:0;background:radial-gradient(circle,rgba(200,16,46,.16),transparent 65%);pointer-events:none;transform:translate(var(--mx,30vw),var(--my,30vh)) translate(-50%,-50%);transition:transform .25s ease-out}
+.hero-logo{position:absolute;right:8vw;top:135px;width:145px;opacity:.9;filter:drop-shadow(0 20px 50px rgba(200,16,46,.18));animation:float 5s ease-in-out infinite;z-index:2}
+.eyebrow{color:var(--red);margin-bottom:25px;opacity:0;animation:fadeUp .9s .1s var(--ease) forwards}
+.hero h1{font-size:clamp(64px,10.8vw,164px);line-height:.88;letter-spacing:-.085em;margin:0;max-width:950px;position:relative;z-index:2}
+.hero h1 .ln{display:block;overflow:hidden;padding:0 .04em .24em 0;margin-bottom:-.18em}
+.hero h1 .ln>span{display:inline-block;transform:translateY(110%) rotate(3deg);transform-origin:0 100%;animation:lineUp 1.1s var(--ease) forwards}
+.hero h1 .ln:nth-child(1)>span{animation-delay:.2s}.hero h1 .ln:nth-child(2)>span{animation-delay:.34s}.hero h1 .ln:nth-child(3)>span{animation-delay:.48s}
+.hero h1 .serif{font-family:'Playfair Display',serif;font-style:italic;font-weight:500;letter-spacing:-.05em}
+.hero h1 .outline{color:var(--black);letter-spacing:-.04em;text-shadow:-1px -1px 0 var(--ivory),1px -1px 0 var(--ivory),-1px 1px 0 var(--ivory),1px 1px 0 var(--ivory),0 -1px 0 var(--ivory),0 1px 0 var(--ivory),-1px 0 0 var(--ivory),1px 0 0 var(--ivory);transition:color .5s}
+.hero h1:hover .outline{color:var(--ivory)}
+.hero-copy{max-width:460px;position:relative;z-index:2;padding-bottom:8px;opacity:0;animation:fadeUp 1s .75s var(--ease) forwards}
+.hero-copy p{font-size:18px;line-height:1.7;color:#b9aa9b;margin:0 0 28px}
+.pill{display:inline-flex;align-items:center;gap:10px;color:var(--ivory);font:500 10px 'DM Mono';text-transform:uppercase;letter-spacing:.12em}
+.pill i{width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 0 6px rgba(200,16,46,.12);animation:ping 2s ease-out infinite}
+.hero-bottom{grid-column:1/-1;border-top:1px solid rgba(230,213,189,.16);padding-top:22px;display:flex;justify-content:space-between;color:#81786e;opacity:0;animation:fadeUp 1s 1s var(--ease) forwards}
+.hero-bottom span:last-child{color:#aaa096}
+
+/* marquee */
+.marquee{background:var(--red);color:var(--ivory);overflow:hidden;white-space:nowrap;padding:16px 0;border-top:1px solid rgba(0,0,0,.2)}
+.marquee-track{display:inline-flex;gap:44px;animation:marquee 28s linear infinite;will-change:transform}
+.marquee:hover .marquee-track{animation-play-state:paused}
+.marquee span{font:500 12px 'DM Mono';letter-spacing:.18em;text-transform:uppercase}
+.marquee b{color:var(--black);font-weight:500}
+
+/* sections */
+.section{padding:150px 5vw;position:relative}.section.dark{background:var(--black);color:var(--ivory)}
+.kicker{color:var(--red);margin-bottom:28px}
+.section-head{display:grid;grid-template-columns:1.05fr .95fr;gap:8vw;align-items:end}
+.section h2{font-size:clamp(48px,8vw,120px);line-height:.9;letter-spacing:-.075em;margin:0}
+.section h2 em{font-family:'Playfair Display',serif;font-weight:500}
+.lead{font-size:19px;line-height:1.75;color:var(--muted);max-width:560px}.dark .lead{color:#aaa096}
+
+/* reveal system */
+.reveal{opacity:0;transform:translateY(35px);transition:opacity .9s ease,transform .9s var(--ease)}
+.reveal.show{opacity:1;transform:none}
+[data-stagger]>*{opacity:0;transform:translateY(30px);transition:opacity .8s ease,transform .8s var(--ease);transition-delay:calc(var(--i,0)*110ms)}
+[data-stagger].show>*{opacity:1;transform:none}
+
+/* problem cards */
+.problem{margin-top:80px;display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:var(--line)}
+.problem-card{background:var(--cream);min-height:330px;padding:35px;position:relative;overflow:hidden;transition:background .4s}
+.problem-card:after{content:"";position:absolute;right:-60px;bottom:-80px;width:180px;height:180px;border-radius:50%;border:1px solid rgba(200,16,46,.2);transition:transform .7s var(--ease),background .4s}
+.problem-card:hover{background:#fffdf9}.problem-card:hover:after{transform:scale(1.8);background:rgba(200,16,46,.05)}
+.problem-card .num{font:500 13px 'DM Mono';color:var(--red)}
+.problem-card h3{font-size:35px;letter-spacing:-.05em;margin:70px 0 14px;transition:transform .5s var(--ease)}
+.problem-card:hover h3{transform:translateX(8px)}
+.problem-card p{color:var(--muted);line-height:1.65;margin:0;max-width:310px}
+
+/* pipeline */
+.pipeline-wrap{margin-top:75px;border:1px solid rgba(230,213,189,.18);padding:25px;position:relative;overflow:hidden}
+.pipeline{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;position:relative}
+.pipeline:before{content:"";position:absolute;top:77px;left:8%;right:8%;height:1px;background:linear-gradient(90deg,transparent,var(--red),transparent);opacity:.8;transform:scaleX(0);transform-origin:0 50%;transition:transform 1.6s .2s var(--ease)}
+.pipeline-wrap.show .pipeline:before{transform:scaleX(1)}
+.stage{--rx:0deg;--ry:0deg;min-height:245px;border:1px solid rgba(230,213,189,.18);background:linear-gradient(145deg,#111112,#171719);padding:25px;position:relative;z-index:2;transform:perspective(800px) rotateX(var(--rx)) rotateY(var(--ry));transition:transform .25s ease-out,border-color .4s,box-shadow .4s,background .6s;opacity:0}
+.pipeline-wrap.show .stage{animation:stageIn .9s var(--ease) forwards;animation-delay:calc(var(--i)*180ms)}
+.stage:hover{border-color:var(--red);box-shadow:0 25px 70px rgba(0,0,0,.45)}
+.stage.lit{background:linear-gradient(145deg,#1a1012,#171719);border-color:rgba(200,16,46,.6)}
+.stage-no{font:500 11px 'DM Mono';color:var(--red)}
+.stage-icon{width:42px;height:42px;border:1px solid rgba(230,213,189,.3);border-radius:50%;display:grid;place-items:center;margin:35px 0 22px;font-weight:800;transition:background .4s,transform .6s var(--ease)}
+.stage:hover .stage-icon,.stage.lit .stage-icon{background:var(--red);border-color:var(--red);transform:rotate(360deg)}
+.stage h3{margin:0 0 10px;font-size:19px}.stage p{margin:0;color:#918980;line-height:1.55;font-size:13px}
+.flow-dot{position:absolute;top:97px;left:8%;width:7px;height:7px;border-radius:50%;background:var(--red);box-shadow:0 0 20px var(--red);animation:travel 5s linear infinite;z-index:4}
+
+.metrics{margin-top:70px;display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid rgba(230,213,189,.2)}
+.metric{padding:30px 24px;border-right:1px solid rgba(230,213,189,.16)}.metric:last-child{border:0}
+.metric strong{font-size:58px;letter-spacing:-.07em;display:block;font-variant-numeric:tabular-nums}
+.metric span{font:500 10px 'DM Mono';color:#887f76;text-transform:uppercase;letter-spacing:.1em}
+
+/* insight */
+.insight{margin-top:85px;display:grid;grid-template-columns:.75fr 1.25fr;gap:8vw;align-items:center}
+.formula{border:1px solid var(--line);background:var(--soft);padding:38px;position:relative;overflow:hidden}
+.formula:before{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 40%,rgba(255,255,255,.55) 50%,transparent 60%);transform:translateX(-120%);animation:shine 5s 1.5s ease-in-out infinite}
+.formula .big{font-size:42px;letter-spacing:-.06em;line-height:1.05;margin:0 0 20px}
+.formula code{font:500 13px 'DM Mono';color:var(--red);line-height:2}
+.formula small{display:block;color:var(--muted);margin-top:20px;line-height:1.6}
+.explain h3{font-size:45px;letter-spacing:-.06em;margin:0 0 20px}
+.explain p{font-size:17px;line-height:1.8;color:var(--muted);max-width:600px}
+.tagrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:25px}
+.tag{border:1px solid var(--line);padding:9px 12px;font:500 10px 'DM Mono';color:#5e554d;transition:background .3s,color .3s,border-color .3s,transform .3s var(--ease)}
+.tag:hover{background:var(--red);color:var(--cream);border-color:var(--red);transform:translateY(-3px)}
+
+/* output / dashboard */
+.output{background:var(--cream);padding-top:100px}
+.dash{margin-top:70px;position:relative;background:#121214;color:var(--ivory);border:1px solid #2a2a2d;box-shadow:0 35px 100px rgba(62,43,24,.28);padding:34px}
+.dash:before{content:"LIVE OUTPUT / EXCEL DASHBOARD";position:absolute;left:0;top:-28px;color:var(--red);font:500 10px 'DM Mono';letter-spacing:.12em}
+.dash-top{display:flex;justify-content:space-between;align-items:center;padding-bottom:22px;border-bottom:1px solid rgba(230,213,189,.16)}
+.dash-title{font-size:22px;font-weight:800;letter-spacing:-.04em}.dash-title em{font-style:normal;color:#ff3b5c}
+.dash-date{font:500 10px 'DM Mono';letter-spacing:.14em;text-transform:uppercase;color:#a99e91;display:flex;align-items:center;gap:10px}
+.dash-date i{width:7px;height:7px;border-radius:50%;background:#3ddc84;box-shadow:0 0 0 0 rgba(61,220,132,.6);animation:ping2 2s infinite}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:22px}
+.kpi{background:#1b1b1e;border:1px solid #2c2c30;padding:26px 28px;position:relative;overflow:hidden;transition:border-color .3s,transform .4s var(--ease)}
+.kpi:hover{border-color:var(--red);transform:translateY(-4px)}
+.kpi:after{content:"";position:absolute;left:0;top:0;height:2px;width:100%;background:var(--red);transform:scaleX(0);transform-origin:0 50%;transition:transform 1s .3s var(--ease)}
+.dash.show .kpi:after{transform:scaleX(1)}
+.kpi strong{display:block;font-size:54px;letter-spacing:-.06em;line-height:1;color:#fff;font-variant-numeric:tabular-nums}
+.kpi span{display:block;margin-top:12px;font:500 10px 'DM Mono';letter-spacing:.12em;text-transform:uppercase;color:#a99e91}
+.charts{display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin-top:16px}
+.panel{background:#1b1b1e;border:1px solid #2c2c30;padding:26px 28px}
+.panel-h{display:flex;justify-content:space-between;font:500 10px 'DM Mono';letter-spacing:.14em;text-transform:uppercase;color:#a99e91;margin-bottom:22px}
+.panel-h b{color:var(--ivory);font-weight:500}
+.bars{height:270px;display:flex;align-items:flex-end;gap:14px;border-bottom:1px solid rgba(230,213,189,.25);position:relative;background:repeating-linear-gradient(to top,transparent 0,transparent 53px,rgba(230,213,189,.07) 53px,rgba(230,213,189,.07) 54px)}
+.bar{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative}
+.bar i{display:block;width:100%;height:0;background:linear-gradient(to top,#C8102E,#ff5a73);transition:height 1.2s var(--ease);transition-delay:calc(var(--i)*90ms);position:relative}
+.bar i:hover{filter:brightness(1.2)}
+.bar em{position:absolute;bottom:calc(var(--h)*1% + 8px);font:500 10px 'DM Mono';font-style:normal;color:#fff;opacity:0;transition:opacity .6s 1.1s}
+.dash.show .bar i{height:calc(var(--h)*1%)}.dash.show .bar em{opacity:1}
+.bar-names{display:flex;gap:14px;margin-top:10px}
+.bar-names span{flex:1;text-align:center;font:500 9px 'DM Mono';letter-spacing:.04em;color:#a99e91;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.donut-wrap{display:flex;flex-direction:column;align-items:center;gap:22px}
+.donut{width:200px;height:200px;position:relative}
+.donut svg{width:100%;height:100%;transform:rotate(-90deg)}
+.donut circle{fill:none;stroke-width:26;transition:stroke-dasharray 1.4s var(--ease);transition-delay:calc(var(--i)*160ms)}
+.donut-c{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.donut-c strong{font-size:34px;letter-spacing:-.05em;color:#fff}
+.donut-c span{font:500 9px 'DM Mono';letter-spacing:.12em;color:#a99e91;text-transform:uppercase}
+.legend{width:100%;display:grid;gap:9px}
+.legend div{display:flex;align-items:center;gap:10px;font:500 11px 'DM Mono';color:#d9cbb9}
+.legend i{width:10px;height:10px;border-radius:2px;flex:none}
+.legend b{margin-left:auto;font-weight:500;color:#fff}
+.dash-foot{margin-top:16px;font:500 9px 'DM Mono';letter-spacing:.1em;text-transform:uppercase;color:#6f685f}
+
+.output-bottom{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px}
+.output-card{background:#fffdf9;border:1px solid #CDBDA9;min-height:190px;padding:34px 35px;box-shadow:0 16px 45px rgba(62,43,24,.09);transition:transform .45s var(--ease),box-shadow .45s}
+.output-card:hover{transform:translateY(-6px);box-shadow:0 26px 60px rgba(62,43,24,.16)}
+.output-card strong{display:block;font-size:25px;letter-spacing:-.04em}
+.output-card p{margin:8px 0 0;color:var(--muted);line-height:1.6;max-width:650px}
+.download{display:inline-flex;margin-top:15px;border-bottom:1px solid var(--red);padding-bottom:4px;color:var(--red);font:500 10px 'DM Mono';text-transform:uppercase;letter-spacing:.1em;transition:letter-spacing .3s}
+.download:hover{letter-spacing:.18em}
+
+/* automation */
+.automation{background:var(--red);color:var(--ivory);padding:120px 5vw;position:relative;overflow:hidden}
+.automation:after{content:"ETL";position:absolute;font-size:35vw;right:-5vw;bottom:-13vw;font-weight:800;color:rgba(11,11,12,.07);letter-spacing:-.1em;transform:translateY(var(--py,0));will-change:transform}
+.auto-grid{display:grid;grid-template-columns:1fr 1fr;gap:8vw;position:relative;z-index:2}
+.automation h2{font-size:clamp(55px,9vw,135px);line-height:.82;letter-spacing:-.08em;margin:0}
+.automation p{font-size:18px;line-height:1.8;color:#efdcc6}
+.schedule{margin-top:50px;border-top:1px solid rgba(230,213,189,.35)}
+.schedule-row{display:grid;grid-template-columns:120px 1fr 140px;padding:17px 0;border-bottom:1px solid rgba(230,213,189,.25);font:500 11px 'DM Mono';letter-spacing:.06em;transition:padding .4s var(--ease),background .3s}
+.schedule-row:hover{padding-left:14px;background:rgba(11,11,12,.12)}
+.schedule-row span:nth-child(2){color:#f4e9dc}.schedule-row span:last-child{text-align:right;color:#f0b9c3}
+
+/* code */
+.code-section{padding:140px 5vw;background:var(--cream)}
+.code-layout{display:grid;grid-template-columns:.7fr 1.3fr;gap:8vw;align-items:start}
+.code-layout h2{font-size:70px;line-height:.9;letter-spacing:-.08em;margin:0}
+.code-layout p{color:var(--muted);line-height:1.8;margin-top:25px}
+.code{background:#0f0f10;color:#d9cbb9;border:1px solid #252528;box-shadow:0 25px 80px rgba(11,11,12,.12);overflow:hidden}
+.code-top{padding:13px 17px;border-bottom:1px solid #27272a;display:flex;gap:7px}.code-top i{width:7px;height:7px;border-radius:50%;background:#4a4540}
+.code pre{margin:0;padding:27px;overflow:auto;font:500 12px/1.8 'DM Mono';color:#cbbca9}
+.code pre .l{display:block;opacity:0;transform:translateX(-10px);transition:opacity .5s,transform .5s var(--ease);transition-delay:calc(var(--i)*60ms)}
+.code.show pre .l{opacity:1;transform:none}
+.code .kw{color:#e7a0ad}.code .fn{color:#d9e0b8}.code .str{color:#d6b08e}.code .cm{color:#6d675f}
+.caret{display:inline-block;width:7px;height:14px;background:var(--red);vertical-align:-2px;animation:blink 1s steps(1) infinite}
+
+/* footer */
+.footer{background:var(--black);color:var(--ivory);padding:70px 5vw 35px}
+.footer-top{display:flex;justify-content:space-between;align-items:end;gap:30px}
+.footer h2{font-size:clamp(45px,8vw,110px);line-height:.85;letter-spacing:-.08em;margin:0}
+.footer h2 em{font-family:'Playfair Display',serif;color:var(--red)}
+.footer-links{display:flex;gap:12px;flex-wrap:wrap}
+.footer-links a{border:1px solid rgba(230,213,189,.25);padding:13px 16px;font:500 10px 'DM Mono';letter-spacing:.1em;text-transform:uppercase;transition:background .25s,border-color .25s,transform .3s var(--ease)}
+.footer-links a:hover{background:var(--red);border-color:var(--red);transform:translateY(-3px)}
+.footer-meta{margin-top:65px;border-top:1px solid rgba(230,213,189,.16);padding-top:20px;display:flex;justify-content:space-between;color:#756e66;font:500 9px 'DM Mono';letter-spacing:.08em;text-transform:uppercase}
+
+/* keyframes */
+@keyframes float{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-12px) rotate(2deg)}}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.1);opacity:1}}
+@keyframes travel{0%{left:8%}100%{left:92%}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+@keyframes lineUp{to{transform:none}}
+@keyframes stageIn{from{opacity:0;transform:perspective(800px) translateY(40px)}to{opacity:1;transform:perspective(800px)}}
+@keyframes marquee{to{transform:translateX(-50%)}}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(200,16,46,.5)}100%{box-shadow:0 0 0 12px rgba(200,16,46,0)}}
+@keyframes ping2{0%{box-shadow:0 0 0 0 rgba(61,220,132,.55)}100%{box-shadow:0 0 0 10px rgba(61,220,132,0)}}
+@keyframes shine{0%,60%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
+@keyframes blink{50%{opacity:0}}
+
+
+/* extra motion */
+.cursor{position:fixed;left:0;top:0;width:34px;height:34px;border:1px solid var(--red);border-radius:50%;pointer-events:none;z-index:40;transition:width .3s var(--ease),height .3s var(--ease),background .3s,opacity .3s;opacity:0}
+.cursor.on{opacity:1}.cursor.big{width:70px;height:70px;background:rgba(200,16,46,.14)}
+.mag{transition:transform .35s var(--ease)}
+.marquee span{display:inline-block;will-change:transform}
+.footer h2 em{display:inline-block;animation:bob 4s ease-in-out infinite}
+.section h2 .red{background:linear-gradient(90deg,var(--red) 0 50%,#ff4d6a 50% 100%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:sweep 5s ease-in-out infinite}
+.kicker{position:relative;padding-left:0;transition:padding-left .6s var(--ease)}
+.kicker:before{content:"";position:absolute;left:0;top:50%;width:0;height:1px;background:var(--red);transition:width .8s var(--ease)}
+.kicker.go{padding-left:34px}.kicker.go:before{width:24px}
+.metric strong,.kpi strong{transition:transform .4s var(--ease),color .3s}
+.metric:hover strong{transform:translateY(-4px);color:#ff4d6a}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes sweep{0%,100%{background-position:0 0}50%{background-position:100% 0}}
+@media(max-width:900px),(hover:none){.cursor{display:none}}
+@media(prefers-reduced-motion:reduce){.cursor{display:none}}
+
+/* responsive */
+@media(max-width:900px){
+.navlinks a:not(.nav-cta){display:none}.nav{height:74px;padding:0 5vw}.brand img{width:45px;height:45px}.brand span{font-size:16px}
+.hero{grid-template-columns:1fr;padding-top:130px;min-height:auto}
+.hero-logo{position:relative;right:auto;top:auto;width:100px;margin:30px 0 -20px}
+.hero h1{font-size:18vw}.hero-copy{padding-top:30px}.hero-bottom{margin-top:60px}
+.section{padding:95px 6vw}
+.section-head,.insight,.code-layout,.auto-grid{grid-template-columns:1fr}
+.problem,.pipeline{grid-template-columns:1fr}.pipeline:before{display:none}.flow-dot{display:none}.stage{min-height:200px}
+.metrics{grid-template-columns:1fr 1fr}.metric:nth-child(2){border-right:0}
+.insight{gap:45px}
+.dash{padding:18px}.kpis{grid-template-columns:1fr}.charts{grid-template-columns:1fr}.kpi strong{font-size:44px}
+.bars{height:200px;gap:8px}.bar-names{gap:8px}.bar-names span{font-size:8px}
+.output-bottom{grid-template-columns:1fr}
+.footer-top{display:block}.footer-links{margin-top:35px}.footer-meta{display:block}.footer-meta span{display:block;margin-bottom:8px}
+}
+@media(prefers-reduced-motion:reduce){
+*{scroll-behavior:auto!important;animation:none!important;transition:none!important}
+.reveal,[data-stagger]>*,.stage,.eyebrow,.hero-copy,.hero-bottom,.code pre .l{opacity:1!important;transform:none!important}
+.hero h1 .ln>span{transform:none!important}
+.dash .bar i{height:calc(var(--h)*1%)!important}.dash .bar em{opacity:1!important}
+}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+
+<nav class="nav" id="nav"><a class="brand" href="#top"><img src="assets/logo.png" alt="GitHub ETL Engine logo"><span><em>GitHub</em> ETL Engine</span></a><div class="navlinks"><a href="#pipeline">Pipeline</a><a href="#output">Output</a><a href="#code">Under hood</a><a class="nav-cta" href="https://github.com/DishantBhere/GitHub-ETL-Engine-V2" target="_blank" rel="noopener">GitHub ↗</a></div></nav>
+
+<main id="top">
+<section class="hero" id="hero">
+<div class="hero-glow" id="glow"></div>
+<img class="hero-logo" src="assets/logo.png" alt="">
+<div>
+<div class="eyebrow mono">Automated GitHub intelligence / Python + pandas + SQLite</div>
+<h1><span class="ln"><span>Build less</span></span><span class="ln"><span class="serif">noise.</span></span><span class="ln"><span><span class="red">See more</span> <span class="outline">signal.</span></span></span></h1>
+</div>
+<div class="hero-copy"><p>GitHub ETL Engine turns newly created repositories into ranked, measurable signals, then pushes the same run into SQLite, CSV, Excel and daily email.</p><div class="pill"><i></i> One pipeline / many outputs</div></div>
+<div class="hero-bottom mono"><span>GitHub ETL Engine / Portfolio Showcase</span><span>30-day window · top 500 · daily run</span></div>
+</section>
+
+<div class="marquee" aria-hidden="true"><div class="marquee-track">
+<span>Extract <b>/</b> Transform <b>/</b> Load <b>/</b> Publish <b>/</b> Report <b>/</b></span><span>Extract <b>/</b> Transform <b>/</b> Load <b>/</b> Publish <b>/</b> Report <b>/</b></span><span>Extract <b>/</b> Transform <b>/</b> Load <b>/</b> Publish <b>/</b> Report <b>/</b></span><span>Extract <b>/</b> Transform <b>/</b> Load <b>/</b> Publish <b>/</b> Report <b>/</b></span>
+</div></div>
+
+<section class="section reveal">
+<div class="section-head"><div><div class="kicker mono">01 / Why it exists</div><h2>GitHub is full of <span class="red">signals.</span></h2></div><p class="lead">Finding useful ones by hand means repeatedly searching, sorting, comparing and recording. This project turns that repeated work into one repeatable daily run.</p></div>
+<div class="problem" data-stagger><article class="problem-card"><span class="num">01 / DISCOVER</span><h3>Find fresh repos.</h3><p>GitHub Search API pulls repositories created within the configured window, ordered by stars.</p></article><article class="problem-card"><span class="num">02 / UNDERSTAND</span><h3>Measure momentum.</h3><p>Raw fields become velocity, age, fork ratio and viral tiers so popularity has context.</p></article><article class="problem-card"><span class="num">03 / DELIVER</span><h3>Make it readable.</h3><p>One load becomes analysis tables, an Excel dashboard and a daily report people can consume.</p></article></div>
+</section>
+
+<section id="pipeline" class="section dark reveal">
+<div class="section-head"><div><div class="kicker mono">02 / The run</div><h2>One repo.<br><em>Five stops.</em></h2></div><p class="lead">Follow one repository through the system. Each stage has one job. Output from one stage becomes input for the next.</p></div>
+<div class="pipeline-wrap" id="pipeWrap"><div class="flow-dot"></div><div class="pipeline">
+<article class="stage" style="--i:0"><span class="stage-no">01 / EXTRACT</span><div class="stage-icon">↓</div><h3>GitHub Search API</h3><p>Pull up to 500 newly created repositories from the configured 30-day window.</p></article>
+<article class="stage" style="--i:1"><span class="stage-no">02 / TRANSFORM</span><div class="stage-icon">×</div><h3>pandas</h3><p>Clean descriptions, dedupe URLs, calculate age, velocity, fork ratio and tier.</p></article>
+<article class="stage" style="--i:2"><span class="stage-no">03 / LOAD</span><div class="stage-icon">▣</div><h3>SQLite</h3><p>Upsert current rows while retaining older rows for historical tracking.</p></article>
+<article class="stage" style="--i:3"><span class="stage-no">04 / PUBLISH</span><div class="stage-icon">↗</div><h3>CSV + Excel</h3><p>Generate analytical CSVs and patch workbook data without destroying dashboard design.</p></article>
+<article class="stage" style="--i:4"><span class="stage-no">05 / REPORT</span><div class="stage-icon">@</div><h3>Email</h3><p>Package daily KPIs, top repos, velocity and language mix into an HTML report.</p></article>
+</div></div>
+<div class="metrics reveal"><div class="metric"><strong data-count="475">475</strong><span>repos in snapshot</span></div><div class="metric"><strong data-count="751" data-suffix="K">751K</strong><span>total stars</span></div><div class="metric"><strong data-count="79.41" data-dec="2">79.41</strong><span>top stars / hour</span></div><div class="metric"><strong data-count="24">24</strong><span>language groups</span></div></div>
+</section>
+
+<section class="section reveal">
+<div class="section-head"><div><div class="kicker mono">03 / Transformation</div><h2>Popularity gets <span class="red">context.</span></h2></div><p class="lead">Stars alone can reward older repositories. The engine adds age and velocity, letting fast-moving projects surface beside established ones.</p></div>
+<div class="insight"><div class="formula reveal"><p class="big">Signal =<br>stars ÷ age</p><code>stars_per_hour = stars / age_hours</code><small>Age is calculated from repository creation time. Values are rounded before storage. Lower age + strong stars → stronger momentum signal.</small></div><div class="explain reveal"><h3>Then it ranks the signal.</h3><p>Every repository receives a <strong>viral_level</strong> based on star thresholds, from Normal through Trending, Rising Star, Viral, Super Viral, Iconic, Legendary and Hall of Fame.</p><div class="tagrow"><span class="tag">description filter</span><span class="tag">URL dedupe</span><span class="tag">age_days</span><span class="tag">fork_ratio</span><span class="tag">viral_level</span><span class="tag">rank</span></div></div></div>
+</section>
+
+<section id="output" class="section output reveal">
+<div class="section-head"><div><div class="kicker mono">04 / What comes out</div><h2>Raw API response becomes a <span class="red">decision surface.</span></h2></div><p class="lead">The same run feeds storage, analysis tables, a presentation-ready dashboard and a report email. No manual copy-paste between stages.</p></div>
+
+<div class="dash" id="dash">
+  <div class="dash-top"><div class="dash-title">GitHub <em>Trending</em> Intelligence</div><div class="dash-date"><i></i><span id="dashDate">Latest load / 21 Nov 2026</span></div></div>
+  <div class="kpis">
+    <div class="kpi"><strong data-count="475">475</strong><span>repos tracked</span></div>
+    <div class="kpi"><strong data-count="751" data-suffix="K">751K</strong><span>total stars</span></div>
+    <div class="kpi"><strong data-count="79.41" data-dec="2">79.41</strong><span>top velocity / hr</span></div>
+  </div>
+  <div class="charts">
+    <div class="panel"><div class="panel-h"><span>Repository momentum</span><b>stars / hour</b></div><div class="bars" id="bars"></div><div class="bar-names" id="barNames"></div></div>
+    <div class="panel"><div class="panel-h"><span>Language mix</span><b id="langTotal"></b></div><div class="donut-wrap"><div class="donut"><svg viewBox="0 0 200 200" id="donut"></svg><div class="donut-c"><strong id="donutNum">0</strong><span>languages</span></div></div><div class="legend" id="legend"></div></div></div>
+  </div>
+  <div class="dash-foot">Edit the DATA object in the script at the bottom to match your workbook.</div>
+</div>
+
+<div class="output-bottom" data-stagger><div class="output-card"><strong>Excel dashboard</strong><p>Hand-designed workbook stays intact while data sheets and table ranges are refreshed.</p><a class="download" href="assets/GitHub_Trending_Dashboard.xlsx" download>Download workbook ↗</a></div><div class="output-card"><strong>SQLite + CSV</strong><p>SQLite keeps historical rows. CSVs expose repo, language, category, velocity, topic and activity datasets.</p><a class="download" href="assets/repos.csv" download>Open repo dataset ↗</a></div></div>
+</section>
+
+<section class="automation reveal" id="auto"><div class="auto-grid"><div><div class="kicker mono">05 / Daily automation</div><h2>Run once.<br>Wake up<br><em>informed.</em></h2></div><div><p>Automation is designed around one repeatable command. <strong>run_all.py</strong> executes extraction first, then Excel sync. A scheduler can trigger it daily; the report step packages the result for delivery.</p><div class="schedule" data-stagger><div class="schedule-row"><span>01</span><span>GitHub Search API</span><span>extract</span></div><div class="schedule-row"><span>02</span><span>pipeline.py</span><span>transform + load</span></div><div class="schedule-row"><span>03</span><span>update_excel.py</span><span>publish</span></div><div class="schedule-row"><span>04</span><span>send_report.py</span><span>email</span></div></div></div></div></section>
+
+<section id="code" class="code-section reveal"><div class="code-layout"><div><div class="kicker mono">06 / Under the hood</div><h2>Small code.<br><span class="red">Clear jobs.</span></h2><p>Project stays modular: extraction + transformation + storage in <strong>pipeline.py</strong>; workbook sync in <strong>update_excel.py</strong>; orchestration in <strong>run_all.py</strong>; email reporting in <strong>send_report.py</strong>.</p></div><div class="code" id="codeBox"><div class="code-top"><i></i><i></i><i></i></div><pre><span class="l" style="--i:0"><span class="cm"># pipeline.py</span></span><span class="l" style="--i:1">url = <span class="str">"https://api.github.com/search/repositories"</span></span><span class="l" style="--i:2">params = {</span><span class="l" style="--i:3">    <span class="str">"q"</span>: <span class="str">f"created:&gt;{since}"</span>,</span><span class="l" style="--i:4">    <span class="str">"sort"</span>: <span class="str">"stars"</span>,</span><span class="l" style="--i:5">    <span class="str">"order"</span>: <span class="str">"desc"</span>,</span><span class="l" style="--i:6">}</span><span class="l" style="--i:7"> </span><span class="l" style="--i:8">response = requests.get(url, params=params, ...)</span><span class="l" style="--i:9"> </span><span class="l" style="--i:10"><span class="cm"># transform</span></span><span class="l" style="--i:11">df[<span class="str">"stars_per_hour"</span>] = (</span><span class="l" style="--i:12">    df[<span class="str">"stars"</span>] / age_h.clip(lower=1)</span><span class="l" style="--i:13">).round(2)</span><span class="l" style="--i:14"> </span><span class="l" style="--i:15"><span class="cm"># load</span></span><span class="l" style="--i:16">df.to_sql(<span class="str">"repos_temp"</span>, conn, if_exists=<span class="str">"replace"</span>, index=False)<span class="caret"></span></span></pre></div></div></section>
+</main>
+
+<footer class="footer"><div class="footer-top reveal"><h2>Build less <em>noise.</em><br>See more signal.</h2><div class="footer-links"><a href="https://github.com/DishantBhere/GitHub-ETL-Engine-V2" target="_blank" rel="noopener">GitHub ↗</a><a href="https://www.linkedin.com/in/dishant-bhere/" target="_blank" rel="noopener">LinkedIn ↗</a><a href="https://dishantbhere.vercel.app/" target="_blank" rel="noopener">Portfolio ↗</a><a href="assets/GitHub_Trending_Dashboard.xlsx" download>Dashboard ↓</a></div></div><div class="footer-meta"><span>GitHub ETL Engine · Dishant Bhere</span><span>Python · pandas · SQLite · GitHub Actions · Gmail SMTP</span></div></footer>
+
+<script>
+/* ===== DASHBOARD DATA: edit to match workbook ===== */
+const DATA={
+  date:"Latest load / 21 Nov 2026",
+  repos:[
+    {n:"repo-one",v:79.41},{n:"repo-two",v:58.2},{n:"repo-three",v:49.6},{n:"repo-four",v:47.9},
+    {n:"repo-five",v:35.1},{n:"repo-six",v:30.4},{n:"repo-seven",v:27.8},{n:"repo-eight",v:24.3}
+  ],
+  langs:[
+    {n:"Python",p:34,c:"#C8102E"},{n:"TypeScript",p:26,c:"#E6D5BD"},{n:"JavaScript",p:16,c:"#8a8279"},
+    {n:"Rust",p:12,c:"#ff7a8f"},{n:"Other",p:12,c:"#4a4540"}
+  ]
+};
+
+const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+
+/* build bars */
+(()=>{
+  const max=Math.max(...DATA.repos.map(r=>r.v));
+  $('#bars').innerHTML=DATA.repos.map((r,i)=>`<div class="bar" style="--i:${i};--h:${(r.v/max*100).toFixed(1)}"><em>${r.v}</em><i></i></div>`).join('');
+  $('#barNames').innerHTML=DATA.repos.map(r=>`<span title="${r.n}">${r.n}</span>`).join('');
+  $('#dashDate').textContent=DATA.date;
+})();
+
+/* build donut */
+(()=>{
+  const R=74,C=2*Math.PI*R,svg=$('#donut');let off=0,html='';
+  const total=DATA.langs.reduce((a,l)=>a+l.p,0);
+  DATA.langs.forEach((l,i)=>{
+    const len=l.p/total*C;
+    html+=`<circle data-len="${len}" data-c="${C}" style="--i:${i}" cx="100" cy="100" r="${R}" stroke="${l.c}" stroke-dasharray="0 ${C}" stroke-dashoffset="${-off}"/>`;
+    off+=len;
+  });
+  svg.innerHTML=html;
+  $('#legend').innerHTML=DATA.langs.map(l=>`<div><i style="background:${l.c}"></i>${l.n}<b>${l.p}%</b></div>`).join('');
+  $('#langTotal').textContent=DATA.langs.length+' groups';
+})();
+function drawDonut(){
+  $$('#donut circle').forEach(c=>c.setAttribute('stroke-dasharray',`${Math.max(c.dataset.len-2,0)} ${c.dataset.c}`));
+  countTo($('#donutNum'),DATA.langs.length,0,'');
+}
+
+/* count up */
+function countTo(el,end,dec=0,suffix='',dur=1600){
+  if(reduce){el.textContent=end.toFixed(dec)+suffix;return}
+  const t0=performance.now();
+  const step=t=>{const k=Math.min((t-t0)/dur,1),e=1-Math.pow(1-k,4);el.textContent=(end*e).toFixed(dec)+suffix;if(k<1)requestAnimationFrame(step)};
+  requestAnimationFrame(step);
+}
+function runCounts(root){
+  $$('[data-count]',root).forEach(el=>{
+    if(el.dataset.done)return;el.dataset.done=1;
+    countTo(el,parseFloat(el.dataset.count),parseInt(el.dataset.dec||0),el.dataset.suffix||'');
+  });
+}
+$$('[data-count]').forEach(el=>{if(!reduce)el.textContent='0'+(el.dataset.suffix||'')});
+
+/* stagger index */
+$$('[data-stagger]').forEach(p=>[...p.children].forEach((c,i)=>c.style.setProperty('--i',i)));
+
+/* reveal observer */
+const io=new IntersectionObserver(es=>es.forEach(e=>{
+  if(!e.isIntersecting)return;
+  const t=e.target;t.classList.add('show');
+  if(t.classList.contains('metrics')||t.id==='dash')runCounts(t);
+  if(t.id==='dash')drawDonut();
+  if(t.id==='pipeWrap')lightStages();
+  io.unobserve(t);
+}),{threshold:.14});
+$$('.reveal,[data-stagger],#dash,#pipeWrap,#codeBox').forEach(x=>io.observe(x));
+$('#dash').classList.add('dash');
+
+/* pipeline sequential light-up */
+function lightStages(){
+  $$('.stage').forEach((s,i)=>setTimeout(()=>{
+    s.classList.add('lit');setTimeout(()=>s.classList.remove('lit'),900);
+  },900+i*420));
+}
+
+/* flow dot follows mouse */
+const dot=$('.flow-dot'),pw=$('.pipeline-wrap');
+pw.addEventListener('mousemove',e=>{const r=pw.getBoundingClientRect();dot.style.left=((e.clientX-r.left)/r.width*100)+'%';dot.style.animation='none'});
+pw.addEventListener('mouseleave',()=>{dot.style.animation='travel 5s linear infinite'});
+
+/* stage tilt */
+if(!reduce&&matchMedia('(hover:hover)').matches){
+  $$('.stage').forEach(s=>{
+    s.addEventListener('mousemove',e=>{const r=s.getBoundingClientRect();
+      s.style.setProperty('--ry',((e.clientX-r.left)/r.width-.5)*10+'deg');
+      s.style.setProperty('--rx',(-((e.clientY-r.top)/r.height-.5))*10+'deg')});
+    s.addEventListener('mouseleave',()=>{s.style.setProperty('--rx','0deg');s.style.setProperty('--ry','0deg')});
+  });
+  /* hero cursor glow */
+  const hero=$('#hero');
+  hero.addEventListener('mousemove',e=>{const r=hero.getBoundingClientRect();
+    hero.style.setProperty('--mx',(e.clientX-r.left)+'px');hero.style.setProperty('--my',(e.clientY-r.top)+'px')});
+}
+
+/* scroll: progress, nav shrink/hide, parallax, active link */
+const prog=$('#progress'),nav=$('#nav'),auto=$('#auto'),links=$$('.navlinks a[href^="#"]:not(.nav-cta)');
+let lastY=0,tick=false;
+function onScroll(){
+  const y=scrollY,h=document.documentElement.scrollHeight-innerHeight;
+  prog.style.transform=`scaleX(${h>0?y/h:0})`;
+  nav.classList.toggle('small',y>60);
+  nav.classList.toggle('hide',y>lastY&&y>400);
+  lastY=y;
+  if(!reduce){const r=auto.getBoundingClientRect();if(r.top<innerHeight&&r.bottom>0)auto.style.setProperty('--py',(r.top*-.12)+'px')}
+  let cur='';
+  ['pipeline','output','code'].forEach(id=>{const s=document.getElementById(id);if(s&&s.getBoundingClientRect().top<innerHeight*.4)cur=id});
+  links.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+cur));
+  tick=false;
+}
+addEventListener('scroll',()=>{if(!tick){tick=true;requestAnimationFrame(onScroll)}},{passive:true});
+onScroll();
+
+/* extra motion js */
+if(!reduce&&matchMedia('(hover:hover)').matches){
+  const cur=document.createElement('div');cur.className='cursor';document.body.appendChild(cur);
+  let tx=0,ty=0,cx=0,cy=0;
+  addEventListener('mousemove',e=>{tx=e.clientX;ty=e.clientY;cur.classList.add('on')});
+  document.addEventListener('mouseleave',()=>cur.classList.remove('on'));
+  (function loop(){cx+=(tx-cx)*.18;cy+=(ty-cy)*.18;cur.style.transform=`translate3d(${cx}px,${cy}px,0) translate(-50%,-50%)`;requestAnimationFrame(loop)})();
+  $$('a,.stage,.output-card,.kpi,.tag').forEach(el=>{
+    el.addEventListener('mouseenter',()=>cur.classList.add('big'));
+    el.addEventListener('mouseleave',()=>cur.classList.remove('big'));
+  });
+  /* magnetic */
+  $$('.nav-cta,.footer-links a,.download').forEach(el=>{
+    el.classList.add('mag');
+    el.addEventListener('mousemove',e=>{const r=el.getBoundingClientRect();
+      el.style.transform=`translate(${(e.clientX-r.left-r.width/2)*.3}px,${(e.clientY-r.top-r.height/2)*.4}px)`});
+    el.addEventListener('mouseleave',()=>{el.style.transform=''});
+  });
+  /* hero logo parallax */
+  const logo=$('.hero-logo');
+  addEventListener('mousemove',e=>{if(scrollY>innerHeight)return;
+    logo.style.translate=`${(e.clientX/innerWidth-.5)*-28}px ${(e.clientY/innerHeight-.5)*-28}px`});
+}
+/* kicker scramble + line */
+(()=>{
+  const chars='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/';
+  const kio=new IntersectionObserver(es=>es.forEach(e=>{
+    if(!e.isIntersecting)return;const el=e.target;kio.unobserve(el);el.classList.add('go');
+    if(reduce)return;
+    const txt=el.textContent,t0=performance.now(),dur=900;
+    (function f(t){const k=Math.min((t-t0)/dur,1);
+      el.textContent=[...txt].map((c,i)=>c===' '||c==='/'||i<k*txt.length?c:chars[Math.random()*chars.length|0]).join('');
+      if(k<1)requestAnimationFrame(f);else el.textContent=txt})(t0);
+  }),{threshold:.6});
+  $$('.kicker').forEach(k=>kio.observe(k));
+})();
+/* marquee skew from scroll speed */
+(()=>{
+  if(reduce)return;const sp=$$('.marquee span');let sy=scrollY,sk=0;
+  (function loop(){const d=scrollY-sy;sy=scrollY;sk+=(Math.max(-30,Math.min(30,d))-sk)*.12;
+    const v=`skewX(${(-sk*.4).toFixed(2)}deg)`;sp.forEach(s=>s.style.transform=v);requestAnimationFrame(loop)})();
+})();
+</script>
+</body>
+</html>
