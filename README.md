@@ -12,6 +12,9 @@
 
 ### Tracks what is blowing up on GitHub. Every day. Hands free.
 
+[![OPEN LIVE SITE](https://img.shields.io/badge/OPEN%20LIVE%20SITE%20%E2%86%97-C8102E?style=for-the-badge&labelColor=0B0B0C&logo=githubpages&logoColor=E6D5BD)](https://dishantbhere.github.io/GitHub-ETL-Engine-V2/)
+
+[![LIVE%20SITE](https://img.shields.io/badge/LIVE%20SITE-0B0B0C?style=for-the-badge&labelColor=C8102E)](https://dishantbhere.github.io/GitHub-ETL-Engine-V2/)
 [![OVERVIEW](https://img.shields.io/badge/OVERVIEW-0B0B0C?style=for-the-badge&labelColor=C8102E)](#overview)
 [![PREVIEW](https://img.shields.io/badge/PREVIEW-0B0B0C?style=for-the-badge&labelColor=C8102E)](#dashboard-preview)
 [![DESIGN](https://img.shields.io/badge/DESIGN-0B0B0C?style=for-the-badge&labelColor=C8102E)](#design)
@@ -39,6 +42,7 @@ Every day the pipeline asks the GitHub Search API for the most starred repositor
 
 **You get**
 
+- **Live website** with pipeline walkthrough, dashboard preview and downloads: [open site](https://dishantbhere.github.io/GitHub-ETL-Engine-V2/)
 - **Excel dashboard** with KPIs, top repos, language mix, velocity, topics and activity
 - **CSV exports** in `data/`
 - **SQLite database** (`github_repos.db`) that keeps history
@@ -80,6 +84,7 @@ Black, ivory and red. Same palette across the logo, README, Excel dashboard and 
 
 <div align="center">
 
+[![Live Website](https://img.shields.io/badge/LIVE%20WEBSITE-C8102E?style=for-the-badge&labelColor=0B0B0C&logo=githubpages&logoColor=E6D5BD)](https://dishantbhere.github.io/GitHub-ETL-Engine-V2/)
 [![Dashboard xlsx](https://img.shields.io/badge/DASHBOARD%20XLSX-C8102E?style=for-the-badge&labelColor=0B0B0C&logo=microsoftexcel&logoColor=E6D5BD)](https://github.com/DishantBhere/GitHub-ETL-Engine-V2/blob/main/GitHub_Trending_Dashboard.xlsx)
 [![Datasets](https://img.shields.io/badge/DATASETS-C8102E?style=for-the-badge&labelColor=0B0B0C&logo=files&logoColor=E6D5BD)](https://github.com/DishantBhere/GitHub-ETL-Engine-V2/tree/main/data)
 [![GitHub Actions](https://img.shields.io/badge/GITHUB%20ACTIONS-C8102E?style=for-the-badge&labelColor=0B0B0C&logo=githubactions&logoColor=E6D5BD)](https://github.com/DishantBhere/GitHub-ETL-Engine-V2/actions)
@@ -227,6 +232,7 @@ GitHub-ETL-Engine-V2/
 │   ├── design.png                   # logo + palette
 │   ├── icons/                       # gmail, linkedin, telegram, github svg
 │   └── dashboard_template.xlsx      # master dashboard design
+├── docs/                            # live website (GitHub Pages)
 ├── data/                            # CSV exports
 │   ├── repos.csv
 │   ├── languages.csv
