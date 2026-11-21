@@ -158,6 +158,16 @@ try:
     cur.execute("DELETE FROM repos WHERE url IN (SELECT url FROM repos_temp)")
     cur.execute(f"INSERT INTO repos ({col_list}) SELECT {col_list} FROM repos_temp")
     cur.execute("DROP TABLE repos_temp")
+    cur.execute("""UPDATE repos SET viral_level = CASE
+        WHEN stars >= 25000 THEN 'Hall of Fame'
+        WHEN stars >= 10000 THEN 'Legendary'
+        WHEN stars >= 5000 THEN 'Iconic'
+        WHEN stars >= 2500 THEN 'Super Viral'
+        WHEN stars >= 1000 THEN 'Viral'
+        WHEN stars >= 500 THEN 'Rising Star'
+        WHEN stars >= 100 THEN 'Trending'
+        WHEN stars >= 50 THEN 'Popular'
+        ELSE 'Normal' END""")
     conn.commit()
 finally:
     conn.close()
