@@ -55,9 +55,15 @@ token = os.environ.get("GITHUB_TOKEN")
 if token:
     headers["Authorization"] = f"Bearer {token}"
 
-response = requests.get(url, params=params, headers=headers, timeout=30)
-response.raise_for_status()
-items = response.json().get("items", [])
+items = []
+for page in range(1, 6):  # 5 pages x 100 = top 500
+    params["page"] = page
+    response = requests.get(url, params=params, headers=headers, timeout=30)
+    response.raise_for_status()
+    batch = response.json().get("items", [])
+    items += batch
+    if len(batch) < PER_PAGE:
+        break
 
 if not items:
     print("No repos returned. Exit.")

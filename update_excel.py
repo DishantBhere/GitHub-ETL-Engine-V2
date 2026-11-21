@@ -31,8 +31,8 @@ CAT_COLS = ["viral_level", "repos"]
 VEL_COLS = ["name", "stars_per_hour", "stars", "age_days", "language"]
 TOPIC_COLS = ["topic", "repos", "total_stars"]
 ACT_COLS = ["last_push", "repos"]
-TIER_ORDER = ["Normal", "Popular", "Trending", "Rising Star", "Viral",
-              "Super Viral", "Iconic", "Legendary", "Hall of Fame"]
+TIER_ORDER = ["Trending", "Rising Star", "Viral", "Super Viral",
+              "Iconic", "Legendary", "Hall of Fame"]
 ACT_ORDER = ["Today", "1-2 days", "3-7 days", "8+ days"]
 
 # sheet name -> (table name, columns, csv name)
