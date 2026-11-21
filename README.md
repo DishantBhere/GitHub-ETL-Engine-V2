@@ -225,6 +225,7 @@ GitHub-ETL-Engine-V2/
 ├── assets/
 │   ├── banner.png                   # README banner
 │   ├── design.png                   # logo + palette
+│   ├── icons/                       # gmail, linkedin, telegram, github svg
 │   └── dashboard_template.xlsx      # master dashboard design
 ├── data/                            # CSV exports
 │   ├── repos.csv
@@ -475,9 +476,10 @@ Timeout 15 min. Permission `contents: write`.
 
 ### Connect
 
-[![LinkedIn](https://img.shields.io/badge/LINKEDIN-dishant--bhere-C8102E?style=for-the-badge&labelColor=0B0B0C&logo=linkedin&logoColor=E6D5BD)](https://www.linkedin.com/in/dishant-bhere/)
-[![Gmail](https://img.shields.io/badge/GMAIL-bheredishant3-C8102E?style=for-the-badge&labelColor=0B0B0C&logo=gmail&logoColor=E6D5BD)](https://mail.google.com/mail/u/0/?fs=1&to=bheredishant3@gmail.com&tf=cm)
-[![Telegram](https://img.shields.io/badge/TELEGRAM-TheREdFoX9-C8102E?style=for-the-badge&labelColor=0B0B0C&logo=telegram&logoColor=E6D5BD)](https://t.me/TheREdFoX9)
+<a href="https://mail.google.com/mail/u/0/?fs=1&to=bheredishant3@gmail.com&tf=cm"><img src="assets/icons/gmail.svg" alt="Gmail" width="64" height="64"></a>&nbsp;&nbsp;
+<a href="https://www.linkedin.com/in/dishant-bhere/"><img src="assets/icons/linkedin.svg" alt="LinkedIn" width="64" height="64"></a>&nbsp;&nbsp;
+<a href="https://t.me/TheREdFoX9"><img src="assets/icons/telegram.svg" alt="Telegram" width="64" height="64"></a>&nbsp;&nbsp;
+<a href="https://github.com/DishantBhere"><img src="assets/icons/github.svg" alt="GitHub" width="64" height="64"></a>
 
 ### Built by
 
