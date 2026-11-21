@@ -15,15 +15,16 @@ from zoneinfo import ZoneInfo
 DB = "github_repos.db"
 XLSX = "GitHub_Trending_Dashboard.xlsx"
 
-BG = "#0d1117"
-CARD = "#161b22"
-LINE = "#30363d"
-TEXT = "#e6edf3"
-MUTED = "#8b949e"
-GREEN = "#3fb950"
-BLUE = "#58a6ff"
-ORANGE = "#f0883e"
-RED = "#f85149"
+PAGE = "#DCC5A8"
+IVORY = "#E6D5BD"
+SOFT = "#F0E5D3"
+ORANGE = "#D5360C"
+BLACK = "#101010"
+MUTED = "#6F6256"
+BORDER = "#CDBEA6"
+DIVIDER = "#DACCB6"
+TRACK = "#CDB99E"
+FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"
 
 
 def fmt(n):
@@ -33,6 +34,10 @@ def fmt(n):
     if n >= 10_000:
         return f"{n / 1000:.1f}k"
     return f"{n:,}"
+
+
+def num(n):
+    return f"{int(n or 0):,}"
 
 
 def load_stats():
@@ -63,27 +68,52 @@ def load_stats():
     return kpi, top, fast, langs, fresh, active
 
 
-def kpi_cell(label, value, color):
+def kpi_cell(label, value, color, size=23):
     return (
-        f'<td width="25%" style="padding:4px;">'
-        f'<table width="100%" cellpadding="0" cellspacing="0" style="background:{CARD};'
-        f'border:1px solid {LINE};border-radius:8px;"><tr><td align="center" style="padding:14px 6px;">'
-        f'<div style="font-size:22px;font-weight:700;color:{color};">{escape(str(value))}</div>'
-        f'<div style="font-size:11px;color:{MUTED};padding-top:4px;text-transform:uppercase;'
-        f'letter-spacing:.5px;">{escape(label)}</div></td></tr></table></td>'
+        f'<td width="25%" valign="top" style="padding:0 5px;">'
+        f'<table width="100%" cellpadding="0" cellspacing="0" style="background:{SOFT};'
+        f'border:1px solid {BORDER};border-top:4px solid {ORANGE};border-radius:8px;'
+        f'border-collapse:separate;height:88px;"><tr><td valign="top" style="padding:15px 12px;">'
+        f'<div style="font-size:9px;color:{MUTED};text-transform:uppercase;white-space:nowrap;'
+        f'letter-spacing:1px;font-weight:800;">{escape(label)}</div>'
+        f'<div style="font-size:{size}px;line-height:30px;font-weight:800;color:{color};'
+        f'padding-top:6px;white-space:nowrap;">{escape(str(value))}</div>'
+        f'</td></tr></table></td>'
     )
 
 
 def section(title):
     return (
-        f'<tr><td style="padding:22px 24px 8px;font-size:13px;font-weight:700;color:{TEXT};'
-        f'text-transform:uppercase;letter-spacing:1px;">{escape(title)}</td></tr>'
+        f'<tr><td style="padding:30px 30px 11px;"><div style="padding-bottom:8px;'
+        f'border-bottom:2px solid {ORANGE};font-size:11px;font-weight:900;color:{BLACK};'
+        f'text-transform:uppercase;letter-spacing:1.5px;">{escape(title)}</div></td></tr>'
+    )
+
+
+def list_card(body):
+    return (
+        f'<tr><td style="padding:0 30px;"><table width="100%" cellpadding="0" cellspacing="0" '
+        f'style="background:{SOFT};border:1px solid {BORDER};border-radius:8px;'
+        f'border-collapse:separate;">{body}</table></td></tr>'
+    )
+
+
+def repo_row(i, last, name, url, meta, value, value_color):
+    b = "" if last else f"border-bottom:1px solid {DIVIDER};"
+    return (
+        f'<tr><td width="36" style="padding:14px 0 14px 16px;color:{ORANGE};font-size:13px;'
+        f'font-weight:900;{b}">{i}</td>'
+        f'<td style="padding:14px 8px;{b}"><a href="{escape(url)}" style="color:{ORANGE};'
+        f'text-decoration:none;font-weight:800;font-size:14px;">{escape(name)}</a>'
+        f'<div style="color:{MUTED};font-size:11px;padding-top:3px;">{meta}</div></td>'
+        f'<td align="right" style="padding:14px 16px;color:{value_color};font-weight:900;'
+        f'font-size:14px;white-space:nowrap;{b}">{value}</td></tr>'
     )
 
 
 def build_html(status, trigger, repo, run_url, now):
     ok = status == "success"
-    badge_color = GREEN if ok else RED
+    badge_bg = ORANGE if ok else "#7F1D1D"
     badge_text = "SUCCESS" if ok else "FAILED"
 
     kpis = top = fast = langs = None
@@ -95,20 +125,22 @@ def build_html(status, trigger, repo, run_url, now):
 
     rows = []
     rows.append(
-        f'<tr><td style="padding:28px 24px 8px;">'
-        f'<div style="font-size:12px;color:{MUTED};letter-spacing:2px;">GITHUB TRENDING INTELLIGENCE</div>'
-        f'<div style="font-size:26px;font-weight:700;color:{TEXT};padding-top:6px;">Daily ETL Report</div>'
-        f'<div style="padding-top:12px;"><span style="background:{badge_color};color:#0d1117;'
-        f'font-size:11px;font-weight:700;padding:4px 10px;border-radius:12px;">{badge_text}</span>'
-        f'<span style="color:{MUTED};font-size:12px;padding-left:10px;">{escape(now)} IST'
-        f' &nbsp;|&nbsp; trigger: {escape(trigger)}</span></div></td></tr>'
+        f'<tr><td bgcolor="{BLACK}" style="background:{BLACK};padding:34px 36px 30px;'
+        f'border-bottom:5px solid {ORANGE};">'
+        f'<div style="font-size:11px;color:{ORANGE};letter-spacing:2px;font-weight:800;">GITHUB TRENDING INTELLIGENCE</div>'
+        f'<div style="font-size:30px;line-height:36px;font-weight:800;color:{IVORY};padding-top:8px;">Daily ETL Report</div>'
+        f'<div style="padding-top:18px;"><span style="background:{badge_bg};color:{IVORY};'
+        f'font-size:10px;font-weight:800;letter-spacing:1px;padding:6px 12px;border-radius:20px;">{badge_text}</span>'
+        f'<span style="color:#BBAE9E;font-size:12px;padding-left:10px;">{escape(now)} IST'
+        f' &nbsp;&middot;&nbsp; trigger: {escape(trigger)}</span></div></td></tr>'
     )
 
     if not ok:
         rows.append(
-            f'<tr><td style="padding:16px 24px;"><table width="100%" cellpadding="0" cellspacing="0" '
-            f'style="background:#2d1214;border:1px solid {RED};border-radius:8px;"><tr>'
-            f'<td style="padding:14px 16px;color:{TEXT};font-size:14px;">'
+            f'<tr><td style="padding:22px 30px 0;"><table width="100%" cellpadding="0" cellspacing="0" '
+            f'style="background:#F6D8CF;border:1px solid #A92A0A;border-left:4px solid #A92A0A;'
+            f'border-radius:5px;border-collapse:separate;"><tr>'
+            f'<td style="padding:14px 16px;color:{BLACK};font-size:14px;line-height:20px;">'
             f'The pipeline run failed. Open the run log to see which step broke. '
             f'The dashboard was not refreshed.</td></tr></table></td></tr>'
         )
@@ -116,52 +148,42 @@ def build_html(status, trigger, repo, run_url, now):
     if kpis and kpis["n"]:
         topname = top[0]["name"] if top else "n/a"
         rows.append(
-            '<tr><td style="padding:12px 20px 0;"><table width="100%" cellpadding="0" cellspacing="0"><tr>'
-            + kpi_cell("Repos tracked", kpis["n"], BLUE)
-            + kpi_cell("Total stars", fmt(kpis["s"]), GREEN)
-            + kpi_cell("Avg stars / hr", f'{kpis["sph"] or 0:.1f}', ORANGE)
-            + kpi_cell("Top repo", topname[:14], TEXT)
+            '<tr><td style="padding:26px 25px 0;"><table width="100%" cellpadding="0" cellspacing="0"><tr>'
+            + kpi_cell("Repos tracked", kpis["n"], BLACK)
+            + kpi_cell("Total stars", fmt(kpis["s"]), BLACK)
+            + kpi_cell("Avg stars / hr", f'{kpis["sph"] or 0:.1f}', BLACK)
+            + kpi_cell("Top repo", topname[:14], ORANGE, 14)
             + "</tr></table></td></tr>"
         )
         rows.append(
-            f'<tr><td style="padding:10px 24px 0;font-size:13px;color:{MUTED};">'
-            f'{fresh} repos are under 7 days old. {active} were pushed to today.</td></tr>'
+            f'<tr><td style="padding:18px 30px 0;"><table width="100%" cellpadding="0" cellspacing="0" '
+            f'style="background:{BLACK};border-left:4px solid {ORANGE};border-radius:5px;'
+            f'border-collapse:separate;"><tr><td style="padding:13px 16px;color:{IVORY};font-size:12px;">'
+            f'{fresh} repos are under 7 days old. {active} were pushed today.'
+            f'</td></tr></table></td></tr>'
         )
 
         rows.append(section("Top 5 by stars"))
-        body = ""
-        for i, r in enumerate(top, 1):
-            body += (
-                f'<tr><td width="28" style="padding:9px 0 9px 14px;color:{MUTED};font-size:13px;">{i}</td>'
-                f'<td style="padding:9px 6px;"><a href="{escape(r["url"])}" style="color:{BLUE};'
-                f'text-decoration:none;font-weight:600;font-size:14px;">{escape(r["name"])}</a>'
-                f'<div style="color:{MUTED};font-size:11px;">{escape(r["owner"])}'
-                f' &middot; {escape(r["language"] or "n/a")}</div></td>'
-                f'<td align="right" style="padding:9px 14px;color:{GREEN};font-weight:700;'
-                f'font-size:14px;">{fmt(r["stars"])}</td></tr>'
-                f'<tr><td colspan="3" style="border-top:1px solid {LINE};font-size:0;line-height:0;">&nbsp;</td></tr>'
+        body = "".join(
+            repo_row(
+                i, i == len(top), r["name"], r["url"],
+                f'{escape(r["owner"])} &middot; {escape(r["language"] or "n/a")}',
+                num(r["stars"]), BLACK,
             )
-        rows.append(
-            f'<tr><td style="padding:0 24px;"><table width="100%" cellpadding="0" cellspacing="0" '
-            f'style="background:{CARD};border:1px solid {LINE};border-radius:8px;">{body}</table></td></tr>'
+            for i, r in enumerate(top, 1)
         )
+        rows.append(list_card(body))
 
-        rows.append(section("Fastest rising (stars per hour)"))
-        body = ""
-        for i, r in enumerate(fast, 1):
-            body += (
-                f'<tr><td width="28" style="padding:9px 0 9px 14px;color:{MUTED};font-size:13px;">{i}</td>'
-                f'<td style="padding:9px 6px;"><a href="{escape(r["url"])}" style="color:{BLUE};'
-                f'text-decoration:none;font-weight:600;font-size:14px;">{escape(r["name"])}</a>'
-                f'<div style="color:{MUTED};font-size:11px;">{fmt(r["stars"])} stars total</div></td>'
-                f'<td align="right" style="padding:9px 14px;color:{ORANGE};font-weight:700;'
-                f'font-size:14px;">{r["stars_per_hour"]:.1f}/hr</td></tr>'
-                f'<tr><td colspan="3" style="border-top:1px solid {LINE};font-size:0;line-height:0;">&nbsp;</td></tr>'
+        rows.append(section("Fastest rising \u00b7 Stars per hour"))
+        body = "".join(
+            repo_row(
+                i, i == len(fast), r["name"], r["url"],
+                f'{num(r["stars"])} stars total',
+                f'{r["stars_per_hour"]:.1f}/hr', ORANGE,
             )
-        rows.append(
-            f'<tr><td style="padding:0 24px;"><table width="100%" cellpadding="0" cellspacing="0" '
-            f'style="background:{CARD};border:1px solid {LINE};border-radius:8px;">{body}</table></td></tr>'
+            for i, r in enumerate(fast, 1)
         )
+        rows.append(list_card(body))
 
         rows.append(section("Language mix"))
         peak = max((r["c"] for r in langs), default=1)
@@ -169,45 +191,44 @@ def build_html(status, trigger, repo, run_url, now):
         for r in langs:
             pct = max(int(r["c"] / peak * 100), 4)
             body += (
-                f'<tr><td width="95" style="padding:7px 0 7px 14px;color:{TEXT};font-size:13px;">'
-                f'{escape(r["language"])}</td>'
-                f'<td style="padding:7px 6px;"><table width="100%" cellpadding="0" cellspacing="0">'
-                f'<tr><td width="{pct}%" style="background:{BLUE};height:10px;border-radius:5px;'
-                f'font-size:0;line-height:0;">&nbsp;</td><td style="font-size:0;">&nbsp;</td></tr></table></td>'
-                f'<td width="60" align="right" style="padding:7px 14px;color:{MUTED};font-size:12px;">'
-                f'{r["c"]} repos</td></tr>'
+                f'<tr><td width="95" style="padding:12px 0 12px 16px;color:{BLACK};font-size:12px;'
+                f'font-weight:700;">{escape(r["language"])}</td>'
+                f'<td style="padding:12px 8px;"><table width="100%" cellpadding="0" cellspacing="0" '
+                f'style="background:{TRACK};border-radius:10px;border-collapse:separate;">'
+                f'<tr><td width="{pct}%" bgcolor="{ORANGE}" style="background:{ORANGE};height:9px;'
+                f'border-radius:10px;font-size:0;line-height:0;">&nbsp;</td>'
+                f'<td style="font-size:0;line-height:0;">&nbsp;</td></tr></table></td>'
+                f'<td width="64" align="right" style="padding:12px 16px 12px 0;color:{MUTED};'
+                f'font-size:11px;font-weight:600;white-space:nowrap;">{r["c"]} repos</td></tr>'
             )
-        rows.append(
-            f'<tr><td style="padding:0 24px;"><table width="100%" cellpadding="0" cellspacing="0" '
-            f'style="background:{CARD};border:1px solid {LINE};border-radius:8px;">{body}</table></td></tr>'
-        )
+        rows.append(list_card(body))
 
     rows.append(
-        f'<tr><td align="center" style="padding:26px 24px 8px;">'
-        f'<a href="{escape(run_url)}" style="background:{BLUE};color:#0d1117;text-decoration:none;'
-        f'font-weight:700;font-size:14px;padding:12px 22px;border-radius:6px;display:inline-block;">'
-        f'View run log</a>&nbsp;&nbsp;'
-        f'<a href="https://github.com/{escape(repo)}" style="border:1px solid {LINE};color:{TEXT};'
-        f'text-decoration:none;font-size:14px;padding:11px 20px;border-radius:6px;display:inline-block;">'
-        f'Open repo</a></td></tr>'
+        f'<tr><td align="center" style="padding:34px 30px 24px;">'
+        f'<a href="{escape(run_url)}" style="background:{ORANGE};border:2px solid {ORANGE};color:{IVORY};'
+        f'text-decoration:none;font-weight:800;font-size:13px;padding:12px 24px;border-radius:7px;'
+        f'display:inline-block;">View run log</a>&nbsp;&nbsp;'
+        f'<a href="https://github.com/{escape(repo)}" style="background:{BLACK};border:2px solid {BLACK};'
+        f'color:{IVORY};text-decoration:none;font-weight:800;font-size:13px;padding:12px 24px;'
+        f'border-radius:7px;display:inline-block;">Open repo</a></td></tr>'
     )
-    if ok:
-        rows.append(
-            f'<tr><td align="center" style="padding:6px 24px 0;font-size:12px;color:{MUTED};">'
-            f'Full Excel dashboard is attached.</td></tr>'
-        )
+    attached = "Full Excel dashboard is attached.<br><br>" if ok else ""
     rows.append(
-        f'<tr><td align="center" style="padding:22px 24px 28px;font-size:11px;color:{MUTED};">'
-        f'Sent automatically by GitHub Actions &middot; {escape(repo)}</td></tr>'
+        f'<tr><td align="center" bgcolor="{BLACK}" style="background:{BLACK};padding:25px 30px 30px;'
+        f'border-top:4px solid {ORANGE};color:#AFA294;font-size:10px;line-height:15px;">'
+        f'{attached}Sent automatically by GitHub Actions &middot; {escape(repo)}</td></tr>'
     )
 
     return (
-        f'<!DOCTYPE html><html><body style="margin:0;padding:0;background:#010409;">'
-        f'<table width="100%" cellpadding="0" cellspacing="0" style="background:#010409;"><tr>'
-        f'<td align="center" style="padding:20px 8px;">'
-        f'<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;'
-        f'background:{BG};border:1px solid {LINE};border-radius:12px;'
-        f'font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;">'
+        f'<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">'
+        f'<meta name="viewport" content="width=device-width, initial-scale=1.0">'
+        f'<meta name="color-scheme" content="light only"><title>GitHub Trending Intelligence</title></head>'
+        f'<body style="margin:0;padding:0;background:{PAGE};">'
+        f'<table width="100%" cellpadding="0" cellspacing="0" style="background:{PAGE};"><tr>'
+        f'<td align="center" style="padding:32px 12px;">'
+        f'<table width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%;'
+        f'background:{IVORY};border:2px solid {BLACK};border-radius:14px;border-collapse:separate;'
+        f'overflow:hidden;font-family:{FONT};color:{BLACK};">'
         + "".join(rows)
         + "</table></td></tr></table></body></html>"
     )
