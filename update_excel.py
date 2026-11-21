@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Daily Excel updater: SQLite -> CSVs + data sheets inside the dashboard.
 
-DESIGN-SAFE: the xlsx is patched at zip level. Only the cell data of the *_Data
+DESIGN-SAFE: every run copies the master design assets/dashboard_template.xlsx and patches it at zip level. Only the cell data of the *_Data
 sheets, their table ranges and Config are rewritten. Dashboard sheet, charts,
 images, picture links, fonts, colors, merged cells... are copied byte for byte.
 (openpyxl load/save would drop picture hyperlinks and re-write the charts, so it
@@ -23,7 +23,11 @@ from xml.sax.saxutils import escape
 import pandas as pd
 
 DB_PATH = os.environ.get("DB_PATH", "github_repos.db")
-TEMPLATE_PATH = os.environ.get("TEMPLATE_PATH", "GitHub_Trending_Dashboard.xlsx")
+TEMPLATE_PATH = os.environ.get("TEMPLATE_PATH", "GitHub_Trending_Dashboard.xlsx")  # output workbook
+# Master design (your hand-edited dashboard). Never modified by runs. Every run starts from a
+# fresh copy of it, so the design can never drift back to an old style.
+DESIGN_SRC = os.environ.get("DESIGN_SRC", os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "assets", "dashboard_template.xlsx"))
 DATA_DIR = os.environ.get("DATA_DIR", "data")
 DAYS_BACK = int(os.environ.get("DAYS_BACK", 30))  # same default as pipeline.py
 # DB keeps old rows. 1 = dashboard shows only the newest load (default), 0 = every row in DB
@@ -238,8 +242,9 @@ def patch_workbook(files, repos_only_data=True):
     files["xl/workbook.xml"] = wb.encode("utf8")
 
 
-def update_workbook(path, frames, config):
-    with zipfile.ZipFile(path) as z:
+def update_workbook(path, frames, config, src=None):
+    """Read `src` (master design, default = path itself), patch data, write result to `path`."""
+    with zipfile.ZipFile(src or path) as z:
         infos = z.infolist()
         files = {i.filename: z.read(i.filename) for i in infos}
     parts = sheet_part_map(files)
@@ -274,12 +279,14 @@ def main():
         df.to_csv(os.path.join(DATA_DIR, SHEETS[sheet][2]), index=False)
     log.info("CSVs written to %s/", DATA_DIR)
 
-    if not os.path.exists(TEMPLATE_PATH):
-        raise SystemExit(f"Template not found: {TEMPLATE_PATH}.")
+    src = DESIGN_SRC if os.path.exists(DESIGN_SRC) else TEMPLATE_PATH
+    if not os.path.exists(src):
+        raise SystemExit(f"Design template not found: {DESIGN_SRC} (or {TEMPLATE_PATH}).")
     config = {"B1": f"{repos['loaded_at'].iloc[0]} {repos['loaded_time'].iloc[0]}",
               "B2": DAYS_BACK, "B3": len(repos)}
-    update_workbook(TEMPLATE_PATH, frames, config)
-    log.info("Excel data updated: %s (%d repos). Dashboard design untouched.", TEMPLATE_PATH, len(repos))
+    update_workbook(TEMPLATE_PATH, frames, config, src=src)
+    log.info("Excel built from %s -> %s (%d repos). Design copied as is, only data changed.",
+             os.path.relpath(src), TEMPLATE_PATH, len(repos))
 
 
 if __name__ == "__main__":
