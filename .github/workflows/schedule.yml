@@ -1,10 +1,11 @@
 name: Daily GitHub ETL
 
-run-name: "ETL (${{ github.event_name }})"   # Actions list shows: schedule / workflow_dispatch
+run-name: "ETL (${{ github.event_name }})"
+
 on:
   schedule:
     - cron: "30 19 * * *"
-  workflow_dispatch:        # manual button
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -49,3 +50,51 @@ jobs:
           git diff --cached --quiet || git commit -m "chore: refresh (${{ github.event_name }}) $(date -u +%F\ %H:%M)"
           git pull --rebase origin main
           git push
+
+      - name: Email summary
+        if: always()
+        continue-on-error: true
+        env:
+          MAIL_USER: ${{ secrets.MAIL_USER }}
+          MAIL_PASS: ${{ secrets.MAIL_PASS }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+          STATUS: ${{ job.status }}
+          TRIGGER: ${{ github.event_name }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          python - <<'EOF'
+          import os, ssl, smtplib
+          from email.message import EmailMessage
+
+          e = os.environ
+          user = e["MAIL_USER"].strip()
+          pw = e["MAIL_PASS"].replace(" ", "").strip()
+          to = e["MAIL_TO"].strip()
+          print("user len:", len(user), "pass len:", len(pw), "to len:", len(to))
+
+          m = EmailMessage()
+          m["Subject"] = f"ETL {e['STATUS']}: {e['REPO']}"
+          m["From"] = user
+          m["To"] = to
+          m.set_content(
+              f"Status: {e['STATUS']}\n"
+              f"Trigger: {e['TRIGGER']}\n"
+              f"Run: {e['RUN_URL']}\n"
+              f"Repo: https://github.com/{e['REPO']}\n"
+          )
+
+          if e["STATUS"] == "success":
+              with open("GitHub_Trending_Dashboard.xlsx", "rb") as f:
+                  m.add_attachment(
+                      f.read(),
+                      maintype="application",
+                      subtype="vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                      filename="GitHub_Trending_Dashboard.xlsx",
+                  )
+
+          with smtplib.SMTP("smtp.gmail.com", 587, timeout=30) as s:
+              s.starttls(context=ssl.create_default_context())
+              s.login(user, pw)
+              s.send_message(m)
+          EOF
