@@ -16,14 +16,14 @@ DB_PATH = os.environ.get("DB_PATH", "github_repos.db")
 TIMEZONE = os.environ.get("TIMEZONE", "Asia/Kolkata")  # "UTC" for raw GitHub time
 
 CATEGORIES = [
-    (1_000_000, "Hall of Fame"),
-    (500_000, "Phenomenal"),
-    (250_000, "Iconic"),
-    (100_000, "Legendary"),
-    (75_000, "Super Viral"),
-    (50_000, "Viral"),
-    (25_000, "Rising Star"),
-    (10_000, "Trending"),
+    (25_000, "Hall of Fame"),
+    (10_000, "Legendary"),
+    (5_000, "Iconic"),
+    (2_500, "Super Viral"),
+    (1_000, "Viral"),
+    (500, "Rising Star"),
+    (100, "Trending"),
+    (50, "Popular"),
 ]
 
 
