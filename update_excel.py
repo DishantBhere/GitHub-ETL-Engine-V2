@@ -1,23 +1,33 @@
 # -*- coding: utf-8 -*-
-"""Daily Excel updater: SQLite -> CSVs + data sheets inside the dashboard template.
+"""Daily Excel updater: SQLite -> CSVs + data sheets inside the dashboard.
 
-The Dashboard sheet is NEVER touched. Only the *_Data sheets + Config are rewritten.
-Your hand edits to Dashboard (colors, logo, charts, text) survive.
+DESIGN-SAFE: the xlsx is patched at zip level. Only the cell data of the *_Data
+sheets, their table ranges and Config are rewritten. Dashboard sheet, charts,
+images, picture links, fonts, colors, merged cells... are copied byte for byte.
+(openpyxl load/save would drop picture hyperlinks and re-write the charts, so it
+is NOT used on the workbook any more.)
+
+Excel recalculates every KPI / chart when the file is opened (fullCalcOnLoad).
 """
 
 import logging
 import os
+import re
+import shutil
 import sqlite3
 import sys
+import tempfile
+import zipfile
+from xml.sax.saxutils import escape
 
 import pandas as pd
-from openpyxl import load_workbook
-from openpyxl.utils import get_column_letter
 
 DB_PATH = os.environ.get("DB_PATH", "github_repos.db")
 TEMPLATE_PATH = os.environ.get("TEMPLATE_PATH", "GitHub_Trending_Dashboard.xlsx")
 DATA_DIR = os.environ.get("DATA_DIR", "data")
 DAYS_BACK = int(os.environ.get("DAYS_BACK", 30))  # same default as pipeline.py
+# DB keeps old rows. 1 = dashboard shows only the newest load (default), 0 = every row in DB
+LATEST_ONLY = os.environ.get("LATEST_ONLY", "1") == "1"
 
 REPO_COLS = [
     "rank", "name", "owner", "owner_type", "stars", "forks", "open_issues",
@@ -44,27 +54,17 @@ SHEETS = {
     "Topic_Data": ("tblTopics", TOPIC_COLS, "topics.csv"),
     "Activity_Data": ("tblActivity", ACT_COLS, "activity.csv"),
 }
-NUM_FMT = {
-    "stars": "#,##0", "forks": "#,##0", "total_stars": "#,##0", "avg_stars": "#,##0",
-    "stars_per_hour": "0.00", "avg_stars_per_hour": "0.00",
-    "fork_ratio": "0.000", "age_days": "0.0",
-}
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s",
                     datefmt="%Y-%m-%d %H:%M:%S")
 log = logging.getLogger("excel_updater")
 
 
-def to_py(v):
-    if v is None or pd.isna(v):
-        return None
-    return v.item() if hasattr(v, "item") else v
-
-
+# --------------------------------------------------------------------------- data
 def read_repos():
     conn = sqlite3.connect(DB_PATH)
     try:
-        df = pd.read_sql("SELECT * FROM repos ORDER BY rank", conn)
+        df = pd.read_sql("SELECT * FROM repos", conn)
     finally:
         conn.close()
     missing = [c for c in REPO_COLS if c not in df.columns]
@@ -72,6 +72,12 @@ def read_repos():
         raise SystemExit(f"DB missing columns {missing}. Run pipeline.py first.")
     if df.empty:
         raise SystemExit("repos table is empty. Run pipeline.py first.")
+
+    if LATEST_ONLY:
+        d = pd.to_datetime(df["loaded_at"], format="%d-%m-%y", errors="coerce")
+        df = df[d == d.max()]
+    df = df.sort_values(["stars", "name"], ascending=[False, True]).reset_index(drop=True)
+    df["rank"] = df.index + 1  # clean 1..N (old rows no longer collide)
     return df[REPO_COLS]
 
 
@@ -107,24 +113,156 @@ def build_frames(repos):
             "Topic_Data": topics[TOPIC_COLS], "Activity_Data": act[ACT_COLS]}
 
 
-def write_sheet(wb, sheet, df):
-    table_name, cols, _ = SHEETS[sheet]
-    ws = wb[sheet]
-    if ws.max_row > 1:
-        ws.delete_rows(2, ws.max_row - 1)  # clear old data, keep header + table + widths
-    for c, col in enumerate(cols, 1):
-        ws.cell(1, c, col)
+# --------------------------------------------------------------------------- xml helpers
+_BAD = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\ud800-\udfff\ufffe\uffff]")
+
+
+def col_letter(n):
+    s = ""
+    while n:
+        n, r = divmod(n - 1, 26)
+        s = chr(65 + r) + s
+    return s
+
+
+def cell_xml(ref, v, style):
+    """One <c>. Numbers stay numbers, text becomes an inline string, None/NaN = empty."""
+    if v is None or (isinstance(v, float) and (v != v or v in (float("inf"), float("-inf")))):
+        return f'<c r="{ref}" s="{style}"/>' if style else ""
+    if hasattr(v, "item"):          # numpy scalar -> python
+        v = v.item()
+    s_attr = f' s="{style}"' if style else ""
+    if isinstance(v, bool):
+        return f'<c r="{ref}"{s_attr}><v>{int(v)}</v></c>'
+    if isinstance(v, (int, float)):
+        return f'<c r="{ref}"{s_attr}><v>{repr(v)}</v></c>'
+    txt = escape(_BAD.sub("", str(v)))
+    return f'<c r="{ref}"{s_attr} t="inlineStr"><is><t xml:space="preserve">{txt}</t></is></c>'
+
+
+def sheet_part_map(files):
+    """sheet name -> part path (xl/worksheets/sheetN.xml)"""
+    wb = files["xl/workbook.xml"].decode("utf8")
+    rels = files["xl/_rels/workbook.xml.rels"].decode("utf8")
+    rid2t = {}
+    for tag in re.findall(r"<Relationship\b[^>]*>", rels):
+        rid = re.search(r'Id="([^"]+)"', tag).group(1)
+        tgt = re.search(r'Target="([^"]+)"', tag).group(1)
+        rid2t[rid] = tgt.lstrip("/") if tgt.startswith("/") else "xl/" + tgt
+    out = {}
+    for tag in re.findall(r"<sheet\b[^>]*/>", wb):
+        name = re.search(r'name="([^"]+)"', tag).group(1)
+        rid = re.search(r'r:id="([^"]+)"', tag).group(1)
+        out[name] = rid2t[rid]
+    return out
+
+
+def table_part(files, sheet_part):
+    rel = os.path.dirname(sheet_part) + "/_rels/" + os.path.basename(sheet_part) + ".rels"
+    if rel not in files:
+        return None
+    for tag in re.findall(r"<Relationship\b[^>]*>", files[rel].decode("utf8")):
+        if "/table" in tag:
+            t = re.search(r'Target="([^"]+)"', tag).group(1)
+            if t.startswith("/"):
+                return t.lstrip("/")
+            return os.path.normpath(os.path.join(os.path.dirname(sheet_part), t)).replace("\\", "/")
+    return None
+
+
+def column_styles(sheet_xml, ncols):
+    """style id (s=) per column, copied from the first data rows of the template."""
+    styles = {}
+    for m in re.finditer(r'<row r="(\d+)"[^>]*>(.*?)</row>', sheet_xml, re.S):
+        if int(m.group(1)) < 2:
+            continue
+        for c in re.finditer(r'<c r="([A-Z]+)\d+"([^>]*?)/?>', m.group(2)):
+            s = re.search(r'\bs="(\d+)"', c.group(2))
+            if s and c.group(1) not in styles:
+                styles[c.group(1)] = s.group(1)
+        if int(m.group(1)) > 8:
+            break
+    return styles
+
+
+def patch_data_sheet(files, part, cols, df):
+    xml = files[part].decode("utf8")
+    styles = column_styles(xml, len(cols))
+    hdr = re.search(r'<row r="1"[^>]*>.*?</row>', xml, re.S)
+    if not hdr:
+        raise SystemExit(f"{part}: header row missing in template")
+    rows = [hdr.group(0)]
     for r, row in enumerate(df.itertuples(index=False, name=None), 2):
-        for c, v in enumerate(row, 1):
-            cell = ws.cell(r, c, to_py(v))
-            fmt = NUM_FMT.get(cols[c - 1])
-            if fmt:
-                cell.number_format = fmt
-    tbl = ws.tables[table_name]
-    last = max(len(df) + 1, 2)  # Excel table needs header + >=1 row
-    tbl.ref = f"A1:{get_column_letter(len(cols))}{last}"
-    if tbl.autoFilter is not None:
-        tbl.autoFilter.ref = tbl.ref
+        cells = "".join(cell_xml(f"{col_letter(c)}{r}", v, styles.get(col_letter(c)))
+                        for c, v in enumerate(row, 1))
+        rows.append(f'<row r="{r}">{cells}</row>')
+    last = max(len(df) + 1, 2)
+    xml = re.sub(r"<sheetData>.*?</sheetData>|<sheetData\s*/>",
+                 lambda _m: "<sheetData>" + "".join(rows) + "</sheetData>", xml, count=1, flags=re.S)
+    xml = re.sub(r'<dimension ref="[^"]*"/>', f'<dimension ref="A1:{col_letter(len(cols))}{last}"/>', xml, count=1)
+    files[part] = xml.encode("utf8")
+    return last
+
+
+def patch_table(files, tpart, ncols, last, cols):
+    t = files[tpart].decode("utf8")
+    names = re.findall(r'<tableColumn\b[^>]*\bname="([^"]*)"', t)
+    if names != cols:
+        raise SystemExit(f"{tpart}: table columns {names} != expected {cols}. "
+                         "Template and update_excel.py are out of sync.")
+    ref = f"A1:{col_letter(ncols)}{last}"
+    t = re.sub(r'(<table\b[^>]*?\bref=")[^"]*(")', lambda m: m.group(1) + ref + m.group(2), t, count=1)
+    t = re.sub(r'(<autoFilter\b[^>]*?\bref=")[^"]*(")', lambda m: m.group(1) + ref + m.group(2), t, count=1)
+    files[tpart] = t.encode("utf8")
+
+
+def patch_config(files, part, values):
+    xml = files[part].decode("utf8")
+    for ref, v in values.items():
+        new = cell_xml(ref, v, None)
+        pat = re.compile(r'<c r="%s"[^>]*?(?:/>|>.*?</c>)' % ref, re.S)
+        if pat.search(xml):
+            xml = pat.sub(lambda _m: new, xml, count=1)
+        else:
+            log.warning("Config cell %s not found, skipped", ref)
+    files[part] = xml.encode("utf8")
+
+
+def patch_workbook(files, repos_only_data=True):
+    wb = files["xl/workbook.xml"].decode("utf8")
+    if "fullCalcOnLoad" not in wb:
+        if re.search(r"<calcPr\b[^>]*/>", wb):
+            wb = re.sub(r"<calcPr\b([^>]*?)/>", r'<calcPr\1 fullCalcOnLoad="1"/>', wb, count=1)
+        else:
+            wb = wb.replace("</workbook>", '<calcPr fullCalcOnLoad="1"/></workbook>')
+    files["xl/workbook.xml"] = wb.encode("utf8")
+
+
+def update_workbook(path, frames, config):
+    with zipfile.ZipFile(path) as z:
+        infos = z.infolist()
+        files = {i.filename: z.read(i.filename) for i in infos}
+    parts = sheet_part_map(files)
+    for sheet, df in frames.items():
+        tname, cols, _ = SHEETS[sheet]
+        part = parts[sheet]
+        last = patch_data_sheet(files, part, cols, df)
+        tp = table_part(files, part)
+        if tp:
+            patch_table(files, tp, len(cols), last, cols)
+    patch_config(files, parts["Config"], config)
+    patch_workbook(files)
+
+    fd, tmp = tempfile.mkstemp(suffix=".xlsx", dir=os.path.dirname(os.path.abspath(path)))
+    os.close(fd)
+    with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as out:
+        for i in infos:                       # same order, same names
+            out.writestr(i.filename, files[i.filename])
+    try:
+        shutil.move(tmp, path)
+    except PermissionError:
+        os.remove(tmp)
+        raise SystemExit(f"Cannot write {path}. Close it in Excel, then run again.")
 
 
 def main():
@@ -137,20 +275,11 @@ def main():
     log.info("CSVs written to %s/", DATA_DIR)
 
     if not os.path.exists(TEMPLATE_PATH):
-        raise SystemExit(f"Template not found: {TEMPLATE_PATH}. Run build_template.py once.")
-    wb = load_workbook(TEMPLATE_PATH)
-    for sheet, df in frames.items():
-        write_sheet(wb, sheet, df)
-
-    cfg = wb["Config"]
-    cfg["B1"] = f"{repos['loaded_at'].iloc[0]} {repos['loaded_time'].iloc[0]}"
-    cfg["B2"] = DAYS_BACK
-    cfg["B3"] = len(repos)
-    try:
-        wb.save(TEMPLATE_PATH)
-    except PermissionError:
-        raise SystemExit(f"Cannot write {TEMPLATE_PATH}. Close it in Excel, then run again.")
-    log.info("Excel updated: %s (%d repos)", TEMPLATE_PATH, len(repos))
+        raise SystemExit(f"Template not found: {TEMPLATE_PATH}.")
+    config = {"B1": f"{repos['loaded_at'].iloc[0]} {repos['loaded_time'].iloc[0]}",
+              "B2": DAYS_BACK, "B3": len(repos)}
+    update_workbook(TEMPLATE_PATH, frames, config)
+    log.info("Excel data updated: %s (%d repos). Dashboard design untouched.", TEMPLATE_PATH, len(repos))
 
 
 if __name__ == "__main__":
