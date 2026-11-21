@@ -125,9 +125,9 @@ def build_html(status, trigger, repo, run_url, now, logo_src=None):
         print("stats unavailable:", exc)
 
     logo = (
-        f'<td width="170" align="right" valign="middle" style="padding-left:20px;">'
-        f'<img src="{escape(logo_src)}" width="170" height="170" alt="GitHub Trending Intelligence" '
-        f'style="display:block;border:0;width:170px;height:170px;"></td>'
+        f'<td width="150" align="right" valign="middle" style="padding-left:20px;">'
+        f'<img src="{escape(logo_src)}" width="150" height="150" alt="GitHub Trending Intelligence" '
+        f'style="display:block;border:0;width:150px;height:150px;"></td>'
         if logo_src
         else ""
     )
