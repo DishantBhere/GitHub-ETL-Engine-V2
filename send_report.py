@@ -14,12 +14,13 @@ from zoneinfo import ZoneInfo
 
 DB = "github_repos.db"
 XLSX = "GitHub_Trending_Dashboard.xlsx"
+LOGO = "download-Photoroom.png"
 
 PAGE = "#DCC5A8"
 IVORY = "#E6D5BD"
 SOFT = "#F0E5D3"
-ORANGE = "#D5360C"
-BLACK = "#101010"
+RED = "#C8102E"
+BLACK = "#0B0B0C"
 MUTED = "#6F6256"
 BORDER = "#CDBEA6"
 DIVIDER = "#DACCB6"
@@ -72,7 +73,7 @@ def kpi_cell(label, value, color, size=23):
     return (
         f'<td width="25%" valign="top" style="padding:0 5px;">'
         f'<table width="100%" cellpadding="0" cellspacing="0" style="background:{SOFT};'
-        f'border:1px solid {BORDER};border-top:4px solid {ORANGE};border-radius:8px;'
+        f'border:1px solid {BORDER};border-top:4px solid {RED};border-radius:8px;'
         f'border-collapse:separate;height:88px;"><tr><td valign="top" style="padding:15px 12px;">'
         f'<div style="font-size:9px;color:{MUTED};text-transform:uppercase;white-space:nowrap;'
         f'letter-spacing:1px;font-weight:800;">{escape(label)}</div>'
@@ -85,7 +86,7 @@ def kpi_cell(label, value, color, size=23):
 def section(title):
     return (
         f'<tr><td style="padding:30px 30px 11px;"><div style="padding-bottom:8px;'
-        f'border-bottom:2px solid {ORANGE};font-size:11px;font-weight:900;color:{BLACK};'
+        f'border-bottom:2px solid {RED};font-size:11px;font-weight:900;color:{BLACK};'
         f'text-transform:uppercase;letter-spacing:1.5px;">{escape(title)}</div></td></tr>'
     )
 
@@ -101,9 +102,9 @@ def list_card(body):
 def repo_row(i, last, name, url, meta, value, value_color):
     b = "" if last else f"border-bottom:1px solid {DIVIDER};"
     return (
-        f'<tr><td width="36" style="padding:14px 0 14px 16px;color:{ORANGE};font-size:13px;'
+        f'<tr><td width="36" style="padding:14px 0 14px 16px;color:{RED};font-size:13px;'
         f'font-weight:900;{b}">{i}</td>'
-        f'<td style="padding:14px 8px;{b}"><a href="{escape(url)}" style="color:{ORANGE};'
+        f'<td style="padding:14px 8px;{b}"><a href="{escape(url)}" style="color:{RED};'
         f'text-decoration:none;font-weight:800;font-size:14px;">{escape(name)}</a>'
         f'<div style="color:{MUTED};font-size:11px;padding-top:3px;">{meta}</div></td>'
         f'<td align="right" style="padding:14px 16px;color:{value_color};font-weight:900;'
@@ -111,9 +112,9 @@ def repo_row(i, last, name, url, meta, value, value_color):
     )
 
 
-def build_html(status, trigger, repo, run_url, now):
+def build_html(status, trigger, repo, run_url, now, logo_src=None):
     ok = status == "success"
-    badge_bg = ORANGE if ok else "#7F1D1D"
+    badge_bg = RED if ok else "#4B4D52"
     badge_text = "SUCCESS" if ok else "FAILED"
 
     kpis = top = fast = langs = None
@@ -123,16 +124,24 @@ def build_html(status, trigger, repo, run_url, now):
     except Exception as exc:  # DB missing or broken: still send a status mail
         print("stats unavailable:", exc)
 
+    logo = (
+        f'<td width="120" align="right" valign="middle" style="padding-left:20px;">'
+        f'<img src="{escape(logo_src)}" width="120" height="120" alt="GitHub Trending Intelligence" '
+        f'style="display:block;border:0;width:120px;height:120px;"></td>'
+        if logo_src
+        else ""
+    )
     rows = []
     rows.append(
-        f'<tr><td bgcolor="{BLACK}" style="background:{BLACK};padding:34px 36px 30px;'
-        f'border-bottom:5px solid {ORANGE};">'
-        f'<div style="font-size:11px;color:{ORANGE};letter-spacing:2px;font-weight:800;">GITHUB TRENDING INTELLIGENCE</div>'
-        f'<div style="font-size:30px;line-height:36px;font-weight:800;color:{IVORY};padding-top:8px;">Daily ETL Report</div>'
+        f'<tr><td bgcolor="{BLACK}" style="background:{BLACK};padding:30px 36px 28px;'
+        f'border-bottom:5px solid {RED};"><table width="100%" cellpadding="0" cellspacing="0"><tr>'
+        f'<td valign="top">'
+        f'<div style="font-size:11px;color:{RED};letter-spacing:2px;font-weight:800;">GITHUB TRENDING INTELLIGENCE</div>'
+        f'<div style="font-size:30px;line-height:36px;font-weight:800;color:{IVORY};padding-top:7px;">Daily ETL Report</div>'
         f'<div style="padding-top:18px;"><span style="background:{badge_bg};color:{IVORY};'
         f'font-size:10px;font-weight:800;letter-spacing:1px;padding:6px 12px;border-radius:20px;">{badge_text}</span>'
-        f'<span style="color:#BBAE9E;font-size:12px;padding-left:10px;">{escape(now)} IST'
-        f' &nbsp;&middot;&nbsp; trigger: {escape(trigger)}</span></div></td></tr>'
+        f'<span style="color:#BBAE9E;font-size:12px;padding-left:10px;">{escape(now)} IST</span></div></td>'
+        f'{logo}</tr></table></td></tr>'
     )
 
     if not ok:
@@ -152,12 +161,12 @@ def build_html(status, trigger, repo, run_url, now):
             + kpi_cell("Repos tracked", kpis["n"], BLACK)
             + kpi_cell("Total stars", fmt(kpis["s"]), BLACK)
             + kpi_cell("Avg stars / hr", f'{kpis["sph"] or 0:.1f}', BLACK)
-            + kpi_cell("Top repo", topname[:14], ORANGE, 14)
+            + kpi_cell("Top repo", topname[:14], RED, 14)
             + "</tr></table></td></tr>"
         )
         rows.append(
             f'<tr><td style="padding:18px 30px 0;"><table width="100%" cellpadding="0" cellspacing="0" '
-            f'style="background:{BLACK};border-left:4px solid {ORANGE};border-radius:5px;'
+            f'style="background:{BLACK};border-left:4px solid {RED};border-radius:5px;'
             f'border-collapse:separate;"><tr><td style="padding:13px 16px;color:{IVORY};font-size:12px;">'
             f'{fresh} repos are under 7 days old. {active} were pushed today.'
             f'</td></tr></table></td></tr>'
@@ -179,7 +188,7 @@ def build_html(status, trigger, repo, run_url, now):
             repo_row(
                 i, i == len(fast), r["name"], r["url"],
                 f'{num(r["stars"])} stars total',
-                f'{r["stars_per_hour"]:.1f}/hr', ORANGE,
+                f'{r["stars_per_hour"]:.1f}/hr', RED,
             )
             for i, r in enumerate(fast, 1)
         )
@@ -195,7 +204,7 @@ def build_html(status, trigger, repo, run_url, now):
                 f'font-weight:700;">{escape(r["language"])}</td>'
                 f'<td style="padding:12px 8px;"><table width="100%" cellpadding="0" cellspacing="0" '
                 f'style="background:{TRACK};border-radius:10px;border-collapse:separate;">'
-                f'<tr><td width="{pct}%" bgcolor="{ORANGE}" style="background:{ORANGE};height:9px;'
+                f'<tr><td width="{pct}%" bgcolor="{RED}" style="background:{RED};height:9px;'
                 f'border-radius:10px;font-size:0;line-height:0;">&nbsp;</td>'
                 f'<td style="font-size:0;line-height:0;">&nbsp;</td></tr></table></td>'
                 f'<td width="64" align="right" style="padding:12px 16px 12px 0;color:{MUTED};'
@@ -205,7 +214,7 @@ def build_html(status, trigger, repo, run_url, now):
 
     rows.append(
         f'<tr><td align="center" style="padding:34px 30px 24px;">'
-        f'<a href="{escape(run_url)}" style="background:{ORANGE};border:2px solid {ORANGE};color:{IVORY};'
+        f'<a href="{escape(run_url)}" style="background:{RED};border:2px solid {RED};color:{IVORY};'
         f'text-decoration:none;font-weight:800;font-size:13px;padding:12px 24px;border-radius:7px;'
         f'display:inline-block;">View run log</a>&nbsp;&nbsp;'
         f'<a href="https://github.com/{escape(repo)}" style="background:{BLACK};border:2px solid {BLACK};'
@@ -215,8 +224,10 @@ def build_html(status, trigger, repo, run_url, now):
     attached = "Full Excel dashboard is attached.<br><br>" if ok else ""
     rows.append(
         f'<tr><td align="center" bgcolor="{BLACK}" style="background:{BLACK};padding:25px 30px 30px;'
-        f'border-top:4px solid {ORANGE};color:#AFA294;font-size:10px;line-height:15px;">'
-        f'{attached}Sent automatically by GitHub Actions &middot; {escape(repo)}</td></tr>'
+        f'border-top:4px solid {RED};color:#AFA294;font-size:10px;line-height:15px;">'
+        f'{attached}Sent automatically by <strong style="color:{IVORY};">GitHub Actions</strong> &middot; '
+        f'<a href="https://github.com/DishantBhere" style="color:{RED};text-decoration:none;'
+        f'font-weight:800;">Dishant Bhere</a></td></tr>'
     )
 
     return (
@@ -242,9 +253,12 @@ def main():
     run_url = e.get("RUN_URL", "")
     now = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%d %b %Y, %I:%M %p")
 
-    html = build_html(status, trigger, repo, run_url, now)
+    has_logo = os.path.exists(LOGO)
+    dry = e.get("DRY_RUN") == "1"
+    logo_src = (LOGO if dry else "cid:logo") if has_logo else None
+    html = build_html(status, trigger, repo, run_url, now, logo_src)
 
-    if e.get("DRY_RUN") == "1":
+    if dry:
         with open("email_preview.html", "w", encoding="utf-8") as f:
             f.write(html)
         print("wrote email_preview.html")
@@ -263,6 +277,11 @@ def main():
         f"ETL {status}\nTrigger: {trigger}\nRun: {run_url}\nRepo: https://github.com/{repo}\n"
     )
     m.add_alternative(html, subtype="html")
+    if has_logo:
+        with open(LOGO, "rb") as f:
+            m.get_payload()[1].add_related(
+                f.read(), maintype="image", subtype="png", cid="<logo>"
+            )
 
     if status == "success" and os.path.exists(XLSX):
         with open(XLSX, "rb") as f:
