@@ -12,19 +12,16 @@
 
 ### Tracks what is blowing up on GitHub. Every day. Hands free.
 
-[![OPEN LIVE SITE](https://img.shields.io/badge/OPEN%20LIVE%20SITE%20%E2%86%97-C8102E?style=for-the-badge&labelColor=0B0B0C&logo=githubpages&logoColor=E6D5BD)](https://dishantbhere.github.io/GitHub-ETL-Engine-V2/)
-
-[![LIVE%20SITE](https://img.shields.io/badge/LIVE%20SITE-0B0B0C?style=for-the-badge&labelColor=C8102E)](https://dishantbhere.github.io/GitHub-ETL-Engine-V2/)
+[![LIVE SITE](https://img.shields.io/badge/LIVE%20SITE%20%E2%86%97-C8102E?style=for-the-badge&labelColor=0B0B0C&logo=githubpages&logoColor=E6D5BD)](https://dishantbhere.github.io/GitHub-ETL-Engine-V2/)
 [![OVERVIEW](https://img.shields.io/badge/OVERVIEW-0B0B0C?style=for-the-badge&labelColor=C8102E)](#overview)
 [![PREVIEW](https://img.shields.io/badge/PREVIEW-0B0B0C?style=for-the-badge&labelColor=C8102E)](#dashboard-preview)
 [![DESIGN](https://img.shields.io/badge/DESIGN-0B0B0C?style=for-the-badge&labelColor=C8102E)](#design)
-[![LIVE%20LINKS](https://img.shields.io/badge/LIVE%20LINKS-0B0B0C?style=for-the-badge&labelColor=C8102E)](#live-links)
+[![LIVE LINKS](https://img.shields.io/badge/LIVE%20LINKS-0B0B0C?style=for-the-badge&labelColor=C8102E)](#live-links)
 [![ARCHITECTURE](https://img.shields.io/badge/ARCHITECTURE-0B0B0C?style=for-the-badge&labelColor=C8102E)](#architecture)
-[![QUICK%20START](https://img.shields.io/badge/QUICK%20START-0B0B0C?style=for-the-badge&labelColor=C8102E)](#quick-start)
-[![DEEP%20DIVE](https://img.shields.io/badge/DEEP%20DIVE-0B0B0C?style=for-the-badge&labelColor=C8102E)](#deep-dive)
+[![QUICK START](https://img.shields.io/badge/QUICK%20START-0B0B0C?style=for-the-badge&labelColor=C8102E)](#quick-start)
+[![DEEP DIVE](https://img.shields.io/badge/DEEP%20DIVE-0B0B0C?style=for-the-badge&labelColor=C8102E)](#deep-dive)
 
 </div>
-
 <br>
 
 ## Overview
@@ -40,34 +37,6 @@ Every day the pipeline asks the GitHub Search API for the most starred repositor
 </tr>
 </table>
 
-**You get**
-
-- **Live website** with pipeline walkthrough, dashboard preview and downloads: [open site](https://dishantbhere.github.io/GitHub-ETL-Engine-V2/)
-- **Excel dashboard** with KPIs, top repos, language mix, velocity, topics and activity
-- **CSV exports** in `data/`
-- **SQLite database** (`github_repos.db`) that keeps history
-- **Daily HTML email** with top 5, fastest risers and language mix
-
----
-
-## Dashboard preview
-
-<div align="center">
-<img width="100%" alt="Dashboard" src="https://github.com/user-attachments/assets/fcaac71e-0d4a-425d-a089-44ba615d0a62" />
-<br><br>
-<img width="100%" alt="Charts 1" src="https://github.com/user-attachments/assets/d02ad0bb-11a8-49f8-8f0b-a4b43a371a16" />
-<br><br>
-<img width="100%" alt="Charts 2" src="https://github.com/user-attachments/assets/fbe4d632-77e4-4a75-82fe-5baa44058176" />
-<br><br>
-<img width="100%" alt="Charts 3" src="https://github.com/user-attachments/assets/4d875073-40ec-462a-9b45-97d7ddda5cf1" />
-</div>
-
-## Daily email 📩
-
-<div align="center">
-<img width="1537" height="722" alt="image" src="https://github.com/user-attachments/assets/f26f548c-b796-43cc-b137-6789e7b1c35a" />
-</div>
-
 ---
 
 ## Design
@@ -77,6 +46,27 @@ Every day the pipeline asks the GitHub Search API for the most starred repositor
 </div>
 
 Black, ivory and red. Same palette across the logo, README, Excel dashboard and daily email.
+
+
+## Dashboard preview
+
+
+
+<div align="center">
+<img width="100%" alt="Dashboard" src="https://github.com/user-attachments/assets/783de674-40b7-4693-b2e6-15d35360c433" />
+<br><br>
+<img width="100%" alt="Charts 1" src="https://github.com/user-attachments/assets/9101d1ca-1dd8-4e13-8bf0-a1e55e374d47" />
+<br><br>
+<img width="100%" alt="Charts 2" src="https://github.com/user-attachments/assets/401f4c53-b40c-4fe5-8b6d-3e06d7dea0a4" />
+<br><br>
+<img width="100%" alt="Charts 3" src="https://github.com/user-attachments/assets/5e129041-7e7a-4b89-be3e-dbc675f5bb8c" />
+</div>
+
+## Daily email 📩
+
+<div align="center">
+<img width="1537" height="722" alt="image" src="https://github.com/user-attachments/assets/f26f548c-b796-43cc-b137-6789e7b1c35a" />
+</div>
 
 ---
 
@@ -465,9 +455,9 @@ Timeout 15 min. Permission `contents: write`.
 ![pandas](https://img.shields.io/badge/pandas-C8102E?style=for-the-badge&labelColor=0B0B0C&logo=pandas&logoColor=E6D5BD)
 ![openpyxl](https://img.shields.io/badge/openpyxl-C8102E?style=for-the-badge&labelColor=0B0B0C)
 ![SQLite](https://img.shields.io/badge/SQLite-C8102E?style=for-the-badge&labelColor=0B0B0C&logo=sqlite&logoColor=E6D5BD)
-![GitHub%20Actions](https://img.shields.io/badge/GitHub%20Actions-C8102E?style=for-the-badge&labelColor=0B0B0C&logo=githubactions&logoColor=E6D5BD)
-![GitHub%20REST%20API](https://img.shields.io/badge/GitHub%20REST%20API-C8102E?style=for-the-badge&labelColor=0B0B0C&logo=github&logoColor=E6D5BD)
-![Gmail%20SMTP](https://img.shields.io/badge/Gmail%20SMTP-C8102E?style=for-the-badge&labelColor=0B0B0C&logo=gmail&logoColor=E6D5BD)
+![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-C8102E?style=for-the-badge&labelColor=0B0B0C&logo=githubactions&logoColor=E6D5BD)
+![GitHub REST API](https://img.shields.io/badge/GitHub%20REST%20API-C8102E?style=for-the-badge&labelColor=0B0B0C&logo=github&logoColor=E6D5BD)
+![Gmail SMTP](https://img.shields.io/badge/Gmail%20SMTP-C8102E?style=for-the-badge&labelColor=0B0B0C&logo=gmail&logoColor=E6D5BD)
 ![cron--job.org](https://img.shields.io/badge/cron--job.org-C8102E?style=for-the-badge&labelColor=0B0B0C)
 
 </div>
@@ -485,7 +475,6 @@ Timeout 15 min. Permission `contents: write`.
 <a href="https://mail.google.com/mail/u/0/?fs=1&to=bheredishant3@gmail.com&tf=cm"><img src="assets/icons/gmail.svg" alt="Gmail" width="64" height="64"></a>&nbsp;&nbsp;
 <a href="https://www.linkedin.com/in/dishant-bhere/"><img src="assets/icons/linkedin.svg" alt="LinkedIn" width="64" height="64"></a>&nbsp;&nbsp;
 <a href="https://t.me/TheREdFoX9"><img src="assets/icons/telegram.svg" alt="Telegram" width="64" height="64"></a>&nbsp;&nbsp;
-<a href="https://github.com/DishantBhere"><img src="assets/icons/github.svg" alt="GitHub" width="64" height="64"></a>
 
 ### Built by
 
